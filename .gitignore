@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.env
+.venv
+venv/
+ENV/
+
+# Application Specific
+*.session
+*.session-journal
+*.sqlite
+*.sqlite3
+*.db
+data/
+temp/
+media/
+downloads/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+temp_mhtml/*
+docs/*
+dist/TelegramMirror-DEBUG.exe
+dist/TelegramMirror.exe

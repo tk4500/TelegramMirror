@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/api/assets/icon.ico" onerror="this.href='data:image/x-icon;base64,'">
+    <title>CloneX - Painel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.DEBUG_MODE = false; // Set to true to enable detailed logging
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1D9BF0', // CloneX Blue
+                        sidebar: '#1E2327', // CloneX Dark Gray sidebar
+                        background: '#0F1419', // CloneX main bg dark
+                        card: '#161B22' // CloneX inner card dark
+                    }
+                }
+            }
+        }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine focus plugin para melhor acessibilidade em modais -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        :root {
+            --bg: #03070d;
+            --panel: #0a1019;
+            --panel2: #0d1622;
+            --line: #152435;
+            --text: #f3f7fd;
+            --muted: #8091a8;
+            --blue: #1f99ff;
+            --blue2: #37b3ff;
+            --cyan: #44d8ff;
+            --green: #1bd76a;
+            --yellow: #f0b100;
+            --red: #ff4e59;
+            --shadow: 0 18px 50px rgba(0, 0, 0, .34);
+            --radius: 18px;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        body {
+            background: radial-gradient(circle at 70% -10%, rgba(31, 153, 255, .16), transparent 28%),
+                radial-gradient(circle at 20% 0%, rgba(68, 216, 255, .07), transparent 22%),
+                linear-gradient(180deg, #03070d 0%, #050a12 100%);
+            background-attachment: fixed;
+            color: var(--text);
+        }
+
+        .bg-card {
+            background: linear-gradient(180deg, rgba(13, 22, 34, .96), rgba(9, 16, 25, .96)) !important;
+            border-color: var(--line) !important;
+        }
+
+        .bg-sidebar {
+            background: linear-gradient(180deg, rgba(4, 8, 14, .98), rgba(3, 7, 12, .98)) !important;
+            border-right: 1px solid var(--line) !important;
+        }
+
+        .bg-background {
+            background: #0b131d !important;
+            border-color: var(--line) !important;
+        }
+    </style>
+</head>
+
+<body class="text-gray-100 transition-colors duration-200" x-data="app()">
+    <div x-show="isGlobalDebugMode" x-cloak class="bg-red-600 text-white text-center py-2 font-bold z-50 relative w-full text-sm">
+        🛠 MODO DEBUG GLOBAL ATIVO (.env) - GERANDO LOGS EXCESSIVOS 🛠
+    </div>
+    <!-- Estrutura de Layout Principal -->
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar (Somente quando autenticado) -->
+        <aside x-show="isAuthenticated" :class="mobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+            class="w-64 bg-sidebar flex flex-col justify-between shrink-0 absolute md:relative z-20 h-full transition-transform duration-200"
+            x-cloak>
+            <div>
+                <!-- Logo na Sidebar -->
+                <div class="h-16 flex items-center gap-3 px-6 bg-card border-b border-gray-800">
+                    <img src="/api/assets/logo-clonex.png" onerror="this.style.opacity='0'"
+                        class="h-8 w-auto object-contain rounded" alt="Logo">
+                    <span class="text-white font-bold text-xl tracking-wide hidden sm:inline">Clone<span
+                            class="text-primary">X</span></span>
+                </div>
+
+                <!-- Links de Navegação Sidebar -->
+                <nav class="p-4 space-y-2 text-sm font-bold text-gray-400">
+                    <button @click="currentTab = 'dashboard'"
+                        :class="currentTab === 'dashboard' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-800 hover:text-white'"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                            </path>
+                        </svg>
+                        Dashboard
+                    </button>
+                    <button @click="currentTab = 'clonagem'"
+                        :class="currentTab === 'clonagem' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-800 hover:text-white'"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                        Clonagem
+                    </button>
+                    <button @click="currentTab = 'contas'"
+                        :class="currentTab === 'contas' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-800 hover:text-white'"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
+                        </svg>
+                        Contas
+                    </button>
+                    <button @click="currentTab = 'logs'"
+                        :class="currentTab === 'logs' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-800 hover:text-white'"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        Monitoramento
+                    </button>
+                    <button @click="currentTab = 'settings'"
+                        :class="currentTab === 'settings' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-800 hover:text-white'"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Configurações
+                    </button>
+                </nav>
+            </div>
+
+            <div class="p-4 border-t border-gray-800 text-center">
+                <button @click="logout()" class="text-sm font-bold text-red-500 hover:text-red-400">Sair da
+                    Conta</button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden bg-background relative">
+
+            <!-- Navbar Superior (Topo) -->
+            <header
+                class="bg-card shadow-sm border-b border-gray-800 h-16 flex items-center justify-between px-6 shrink-0 transition-colors duration-200">
+                <div class="flex items-center gap-4">
+                    <button class="md:hidden text-gray-400 hover:text-white" @click="mobileMenu = !mobileMenu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <div class="hidden md:flex items-center gap-2" x-show="!isAuthenticated">
+                        <img src="/api/assets/logo-clonex.png" onerror="this.style.opacity='0'"
+                            class="h-8 w-auto object-contain rounded" alt="Logo">
+                        <span class="text-white font-bold text-xl tracking-wide flex items-center gap-2">Clone<span
+                                class="text-primary">X</span></span>
+                    </div>
+                    <!-- Titulo Dinâmico da Aba Atual -->
+                    <h1 x-show="isAuthenticated" class="text-lg font-bold text-gray-200 capitalize hidden md:block"
+                        x-text="currentTab"></h1>
+                </div>
+
+                <div class="flex gap-4 items-center">
+                    <div class="hidden md:flex gap-4 text-xs bg-gray-800/50 border border-gray-700 px-3 py-1 rounded"
+                        x-show="isAuthenticated">
+                        <div class="flex items-center gap-1" :class="hwStats.cpu > 80 ? 'text-red-500' : ''">
+                            <span class="font-bold text-gray-500">CPU</span>
+                            <span x-text="hwStats.cpu + '%'" class="text-gray-300"></span>
+                        </div>
+                        <div class="flex items-center gap-1" :class="hwStats.ram > 80 ? 'text-red-500' : ''">
+                            <span class="font-bold text-gray-500">RAM</span>
+                            <span x-text="hwStats.ram + '%'" class="text-gray-300"></span>
+                        </div>
+                        <div class="flex items-center gap-1"
+                            :class="hwStats.is_critical ? 'text-red-500 animate-pulse' : (hwStats.disk > 80 ? 'text-yellow-500' : '')">
+                            <span class="font-bold text-gray-500">Disco Livre</span>
+                            <span x-text="hwStats.disk_free_mb + 'MB'" class="text-gray-300"></span>
+                        </div>
+                    </div>
+
+                    <span x-show="isAuthenticated"
+                        class="text-green-500 font-bold text-xs flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded-full"><span
+                            class="w-2 h-2 rounded-full bg-green-500"></span> Online</span>
+
+                    <!-- Botão de Desligar Sistema -->
+                    <button @click="shutdownSystem()" x-show="isAuthenticated"
+                        class="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-600/90 hover:bg-red-500 text-white font-bold rounded shadow transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                            </path>
+                        </svg>
+                        <span class="hidden md:inline">Desligar</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Main Content -->
+            <main class="flex-1 overflow-y-auto p-6 relative" x-cloak>
+                <!-- Ovelay mobile menu close -->
+                <div x-show="mobileMenu && isAuthenticated" @click="mobileMenu = false"
+                    class="fixed inset-0 bg-black/50 z-10 md:hidden"></div>
+                <!-- TELA DE LOGIN -->
+                <div x-show="!isAuthenticated"
+                    class="max-w-md mx-auto mt-20 bg-card p-8 rounded-xl border border-gray-800 shadow-xl">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-white">Login <span
+                            class="text-primary">Painel</span></h2>
+                    <form @submit.prevent="login" class="space-y-4">
+                        <input type="text" x-model="loginForm.username" autocomplete="username"
+                            placeholder="Usuário Admin"
+                            class="w-full px-4 py-3 rounded bg-background border border-gray-700 text-white focus:outline-none focus:border-primary">
+                        <input type="password" x-model="loginForm.password" autocomplete="current-password"
+                            placeholder="Senha"
+                            class="w-full px-4 py-3 rounded bg-background border border-gray-700 text-white focus:outline-none focus:border-primary">
+                        <button type="submit"
+                            class="w-full py-3 bg-primary text-white rounded font-bold hover:bg-blue-600 transition-colors">Entrar</button>
+                    </form>
+                </div>
+
+                <!-- DASHBOARD -->
+                <div x-show="isAuthenticated && currentTab === 'dashboard'" class="space-y-6 max-w-5xl mx-auto">
+                    <!-- Banner Customizado Clonei -->
+                    <div class="w-full bg-card rounded-xl border border-gray-800 shadow overflow-hidden">
+                        <img src="/api/assets/clonei.png" onerror="this.style.display='none'"
+                            class="w-full h-auto object-cover max-h-[300px]" alt="Dashboard Banner">
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <!-- ESTATÍSTICAS PRINCIPAIS (DASHBOARD) -->
+                        <div class="bg-card rounded-xl p-6 border border-gray-800 shadow col-span-2">
+                            <h2 class="font-bold mb-4 text-white">Estatísticas Gerais</h2>
+                            <div class="grid grid-cols-2 gap-4 text-center">
+                                <div class="bg-background border border-gray-800 p-4 rounded-xl">
+                                    <div class="text-sm text-gray-400 mb-1">Processadas</div>
+                                    <div class="text-3xl text-primary font-bold mt-2" x-text="stats.processed"></div>
+                                </div>
+                                <div class="bg-red-900/10 border border-red-900/30 p-4 rounded-xl">
+                                    <div class="text-sm text-red-400 mb-1">Falhas</div>
+                                    <div class="text-3xl text-red-500 font-bold cursor-pointer hover:underline mt-2"
+                                        @click="currentTab='logs'; loadFailedMessages()" x-text="stats.failed"
+                                        title="Ver Falhas"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-xl p-6 border border-gray-800 shadow col-span-2">
+                            <h2 class="font-bold mb-4 text-white">Status do Motor</h2>
+                            <div class="text-center bg-background border border-gray-800 p-4 rounded-xl mb-4 font-bold text-lg uppercase shadow-inner"
+                                :class="sysStatus==='running' ? 'text-green-500' : (sysStatus==='paused' ? 'text-yellow-500' : 'text-gray-400')"
+                                x-text="sysStatus"></div>
+                            <div class="flex gap-2 mt-4">
+                                <button @click="startFlow()"
+                                    class="flex-1 bg-green-600/20 hover:bg-green-600 text-green-500 hover:text-white border border-green-500/50 rounded py-2 font-bold transition-colors"
+                                    :disabled="sysStatus==='running'">▶ Iniciar</button>
+                                <button @click="pauseFlow()"
+                                    class="flex-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-500 hover:text-white border border-yellow-500/50 rounded py-2 font-bold transition-colors"
+                                    :disabled="sysStatus!=='running'">⏸ Pausar</button>
+                                <button @click="stopFlow()"
+                                    class="flex-1 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/50 rounded py-2 font-bold transition-colors"
+                                    :disabled="sysStatus==='idle'">⏹ Parar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- CLONAGEM -->
+                <div x-show="isAuthenticated && currentTab === 'clonagem'"
+                    class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-2 space-y-6">
+                        <!-- SELECAO COM FOTO E FEED LADO A LADO -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-card rounded-xl p-6 shadow border border-gray-800">
+                                <h2 class="font-bold mb-4 text-white">Mapeamento de Chats</h2>
+
+                                <div class="mb-6">
+                                    <label class="text-primary font-bold flex justify-between items-center mb-1">
+                                        Origem
+                                        <div
+                                            class="flex text-xs bg-sidebar border border-gray-700 rounded overflow-hidden">
+                                            <button @click="filterSource='all'"
+                                                :class="filterSource==='all' ? 'bg-primary text-white' : 'text-gray-400'"
+                                                class="px-2 py-1 transition-colors">Todos</button>
+                                            <button @click="filterSource='channel'"
+                                                :class="filterSource==='channel' ? 'bg-primary text-white' : 'text-gray-400'"
+                                                class="px-2 py-1 transition-colors border-l border-r border-gray-700">Canais</button>
+                                            <button @click="filterSource='group'"
+                                                :class="filterSource==='group' ? 'bg-primary text-white' : 'text-gray-400'"
+                                                class="px-2 py-1 transition-colors">Grupos</button>
+                                        </div>
+                                    </label>
+                                    <input type="text" x-model="searchSource" placeholder="Buscar..."
+                                        class="w-full mb-2 px-3 py-2 rounded bg-background border border-gray-800 focus:outline-none focus:border-primary transition-all text-sm text-gray-200">
+                                    <ul
+                                        class="h-48 overflow-y-auto rounded bg-background border border-gray-800 p-1 space-y-1">
+                                        <template x-for="chat in filteredChats(searchSource, filterSource)"
+                                            :key="chat.id">
+                                            <li @click="selectSourceChat(chat.id)"
+                                                class="cursor-pointer p-2 flex items-center gap-3 rounded hover:bg-gray-800"
+                                                :class="config.source_chat_id === chat.id ? 'bg-primary/20 border border-primary/50' : ''">
+                                                <img :src="chat.avatar ? chat.avatar : '/api/assets/icon.ico'"
+                                                    class="w-10 h-10 rounded-full bg-gray-800 object-cover"
+                                                    onerror="this.style.opacity='0'">
+                                                <div class="flex-1 text-sm truncate font-medium text-gray-200"
+                                                    x-text="chat.title"></div>
+                                                <span class="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded-full"
+                                                    x-text="chat.chat_type === 'channel' ? 'C' : 'G'"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <label class="text-green-500 font-bold flex justify-between items-center mb-1">
+                                        Destino
+                                        <div
+                                            class="flex text-xs bg-sidebar border border-gray-700 rounded overflow-hidden">
+                                            <button @click="filterDest='all'"
+                                                :class="filterDest==='all' ? 'bg-green-600 text-white' : 'text-gray-400'"
+                                                class="px-2 py-1 transition-colors">Todos</button>
+                                            <button @click="filterDest='channel'"
+                                                :class="filterDest==='channel' ? 'bg-green-600 text-white' : 'text-gray-400'"
+                                                class="px-2 py-1 transition-colors border-l border-r border-gray-700">Canais</button>
+                                            <button @click="filterDest='group'"
+                                                :class="filterDest==='group' ? 'bg-green-600 text-white' : 'text-gray-400'"
+                                                class="px-2 py-1 transition-colors">Grupos</button>
+                                        </div>
+                                    </label>
+                                    <input type="text" x-model="searchDest" placeholder="Buscar..."
+                                        class="w-full mb-2 px-3 py-2 rounded bg-background border border-gray-800 focus:outline-none focus:border-green-500 transition-all text-sm text-gray-200">
+                                    <ul
+                                        class="h-48 overflow-y-auto rounded bg-background border border-gray-800 p-1 space-y-1">
+                                        <template x-for="chat in filteredChats(searchDest, filterDest)" :key="chat.id">
+                                            <li @click="config.dest_chat_id = chat.id"
+                                                class="cursor-pointer p-2 flex items-center gap-3 rounded hover:bg-gray-800"
+                                                :class="config.dest_chat_id === chat.id ? 'bg-green-900/30 border border-green-600/50' : ''">
+                                                <img :src="chat.avatar ? chat.avatar : '/api/assets/icon.ico'"
+                                                    class="w-10 h-10 rounded-full bg-gray-800 object-cover"
+                                                    onerror="this.style.opacity='0'">
+                                                <div class="flex-1 text-sm truncate font-medium text-gray-200"
+                                                    x-text="chat.title"></div>
+                                                <span class="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded-full"
+                                                    x-text="chat.chat_type === 'channel' ? 'C' : 'G'"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- FEED VISUAL DO CHAT DE ORIGEM -->
+                            <div class="bg-card border border-gray-800 rounded-xl p-6 shadow flex flex-col h-full">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h2 class="font-bold flex items-center gap-2 text-white">
+                                        Feed de Origem
+                                        <span x-show="feedLoading"
+                                            class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                                    </h2>
+                                </div>
+
+                                <div id="feed-container" @scroll="handleFeedScroll"
+                                    class="flex-1 bg-background border border-gray-800 rounded p-2 overflow-y-auto min-h-[400px] max-h-[400px]">
+                                    <div x-show="!config.source_chat_id"
+                                        class="text-center text-gray-500 text-sm mt-20">
+                                        Selecione uma Origem para visualizar as mensagens.</div>
+
+                                    <!-- Botao "Carregar Mais" para fallback de UX caso o infinite scroll falhe -->
+                                    <div x-show="feedMessages.length > 0 && hasMoreFeed" class="text-center py-2">
+                                        <button @click="loadMoreFeed()"
+                                            class="text-xs text-primary hover:underline">Carregar
+                                            mensagens antigas...</button>
+                                    </div>
+
+                                    <template x-for="msg in feedMessages" :key="msg.id">
+                                        <div :id="'msg-' + msg.id"
+                                            class="bg-card p-3 rounded mb-2 shadow-sm border border-gray-800 relative transition-colors duration-500"
+                                            :class="currentCheckpoint && currentCheckpoint.last_message_id === msg.id ? 'ring-2 ring-green-500 bg-green-900/10' : ''">
+                                            <div
+                                                class="flex justify-between items-start mb-2 border-b border-gray-800 pb-1">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="checkbox" x-show="config.scope === 'history'"
+                                                        :value="msg.id" x-model="selectedFeedMessages"
+                                                        class="w-4 h-4 text-blue-600 rounded">
+                                                    <span class="text-xs font-bold text-gray-500"
+                                                        x-text="'#' + msg.id"></span>
+                                                </div>
+                                                <span class="text-[10px] text-gray-400"
+                                                    x-text="new Date(msg.date).toLocaleString()"></span>
+                                            </div>
+
+                                            <div class="text-sm mb-2 break-words whitespace-pre-wrap text-gray-200"
+                                                x-text="msg.text || '[Sem texto/Somente Mídia]'"></div>
+
+                                            <div class="flex justify-between items-center mt-2">
+                                                <div x-show="msg.media_type"
+                                                    class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded"
+                                                    x-text="msg.media_type"></div>
+                                                <div x-show="!msg.media_type" class="w-1"></div>
+
+                                                <!-- Botao Definir como Checkpoint (Apenas no Modo Retomar) -->
+                                                <button x-show="config.scope === 'checkpoint'"
+                                                    @click.prevent="checkpointInputId = msg.id; setCheckpointPosition()"
+                                                    class="text-[10px] bg-sidebar border border-gray-700 hover:bg-primary hover:text-white px-2 py-1 rounded transition text-gray-300">📍
+                                                    Iniciar Daqui</button>
+                                            </div>
+
+                                            <!-- PIN Visual de Checkpoint -->
+                                            <div x-show="currentCheckpoint && currentCheckpoint.last_message_id === msg.id"
+                                                class="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-10 flex items-center gap-1">
+                                                📍 Checkpoint Atual
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONFIGURAÇÕES DE OPERAÇÃO LADO DIREITO -->
+                    <div class="bg-card border border-gray-800 rounded-xl p-6 shadow">
+                        <h2 class="font-bold mb-4 text-white">Configurações e Substituição</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                            <select x-model="config.mode"
+                                class="bg-background text-white border border-gray-800 rounded p-2 text-sm focus:border-primary focus:outline-none">
+                                <option value="replicate">Replicar</option>
+                                <option value="forward">Encaminhar</option>
+                            </select>
+                            <select x-model="config.scope"
+                                class="bg-background text-white border border-gray-800 rounded p-2 text-sm focus:border-primary focus:outline-none">
+                                <option value="history">Histórico</option>
+                                <option value="new">Novas</option>
+                                <option value="checkpoint"
+                                    title="Continua a cópia exatamente de onde parou após uma pausa, falha ou reinicialização, evitando mensagens duplicadas.">
+                                    Retomar de um Checkpoint</option>
+                            </select>
+                            <select x-model="config.speed_profile"
+                                class="bg-background text-white border border-gray-800 rounded p-2 text-sm focus:border-primary focus:outline-none">
+                                <option value="safe">Seguro</option>
+                                <option value="moderate">Médio</option>
+                                <option value="fast">Rápido</option>
+                            </select>
+                        </div>
+
+                        <!-- Input para forçar Checkpoint caso o usuario selecione Retomar / Histórico e haja um Checkpoint ativo -->
+                        <div x-show="['history', 'checkpoint'].includes(config.scope)"
+                            class="mb-4 p-3 bg-card border border-gray-800 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div class="flex-1 w-full">
+                                <label class="text-xs font-bold text-gray-400 block mb-1">ID da Mensagem para
+                                    iniciar/retomar:</label>
+                                <input type="number" x-model="checkpointInputId"
+                                    class="w-full px-3 py-2 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                            </div>
+                            <button @click="setCheckpointPosition()"
+                                class="sm:mt-4 px-3 py-2 bg-primary hover:bg-blue-600 text-white text-xs font-bold rounded transition whitespace-nowrap w-full sm:w-auto">Atualizar
+                                Posição</button>
+                        </div>
+
+                        <div x-show="config.scope === 'checkpoint'"
+                            class="mb-4 text-xs text-gray-400 bg-card border border-gray-800 p-3 rounded">
+                            <strong class="text-primary">Retomar de um Checkpoint:</strong> Continua a cópia exatamente
+                            de onde
+                            parou após uma pausa, falha ou reinicialização, evitando mensagens duplicadas.
+                        </div>
+
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-bold text-gray-300 border-b border-gray-800 pb-1">Substituição de
+                                Links/URLs
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <input type="text" x-model="replaceForm.link1_old" placeholder="Link original 1..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                                <input type="text" x-model="replaceForm.link1_new" placeholder="Novo link 1..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+
+                                <input type="text" x-model="replaceForm.link2_old" placeholder="Link original 2..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                                <input type="text" x-model="replaceForm.link2_new" placeholder="Novo link 2..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+
+                                <input type="text" x-model="replaceForm.link3_old" placeholder="Link original 3..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                                <input type="text" x-model="replaceForm.link3_new" placeholder="Novo link 3..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                            </div>
+
+                            <h3 class="text-sm font-bold text-gray-300 border-b border-gray-800 pb-1 mt-4">Substituição
+                                de
+                                Usernames (@user)</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <input type="text" x-model="replaceForm.user1_old" placeholder="@original 1..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                                <input type="text" x-model="replaceForm.user1_new" placeholder="@novo 1..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+
+                                <input type="text" x-model="replaceForm.user2_old" placeholder="@original 2..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                                <input type="text" x-model="replaceForm.user2_new" placeholder="@novo 2..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+
+                                <input type="text" x-model="replaceForm.user3_old" placeholder="@original 3..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                                <input type="text" x-model="replaceForm.user3_new" placeholder="@novo 3..."
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary">
+                            </div>
+                        </div>
+                        <button @click="applyReplacements"
+                            class="mt-6 px-4 py-3 bg-gray-800 text-sm font-bold w-full rounded hover:bg-primary hover:text-white transition text-gray-200">Gravar
+                            Regras de Substituição</button>
+                    </div>
+
+                    <!-- TESTE DE MENSAGEM ÚNICA -->
+                    <div class="bg-card border border-gray-800 rounded-xl p-6 shadow mt-6">
+                        <h2 class="font-bold mb-4 text-white">Testar Mensagem Única</h2>
+                        <div class="flex flex-col gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 block mb-1">ID da Mensagem ou Link do Telegram:</label>
+                                <input type="text" x-model="singleTestInput" placeholder="Ex: 12345 ou https://t.me/c/1234567/12345"
+                                    class="w-full px-3 py-2 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary transition-colors">
+                            </div>
+                            <button @click="testSingleMessage()"
+                                class="px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-bold rounded transition-colors w-full sm:w-auto self-start">
+                                Testar Agora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ABA DE CONTAS -->
+                <div x-show="isAuthenticated && currentTab === 'contas'" class="max-w-3xl mx-auto space-y-6">
+                    <!-- GERENCIAMENTO DE CONTAS -->
+                    <div class="bg-card rounded-xl p-6 shadow border border-gray-800">
+                        <h2 class="font-bold mb-4 text-lg text-white">Contas do Telegram</h2>
+                        <div class="grid grid-cols-1 gap-4">
+                            <template x-for="acc in accounts" :key="acc.id">
+                                <div class="border border-gray-800 p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                                    :class="activeAccount === acc.id ? 'bg-primary/10 border-primary/50' : 'bg-background'">
+                                    <div>
+                                        <div class="font-bold text-white flex items-center gap-2">
+                                            Conta <span x-text="acc.id"></span>
+                                            <span x-show="activeAccount === acc.id"
+                                                class="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full">Ativa
+                                                Principal</span>
+                                        </div>
+                                        <div class="text-sm text-gray-400 mt-1"
+                                            x-text="acc.phone || 'Sem número configurado. Necessita autenticação.'">
+                                        </div>
+                                    </div>
+                                    <div class="w-full md:w-auto text-right">
+                                        <button x-show="acc.status !== 'connected'" @click="openTgLogin(acc.id)"
+                                            class="px-4 py-2 w-full md:w-auto bg-primary text-white rounded font-bold hover:bg-blue-600 transition-colors">Autenticar</button>
+                                        <span x-show="acc.status === 'connected'"
+                                            class="text-green-500 text-sm font-bold flex flex-col items-end gap-1">
+                                            <div class="flex items-center gap-1"><svg class="w-4 h-4" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg> Conectada (Autenticada)</div>
+                                            <button @click="openTgLogin(acc.id)"
+                                                class="text-xs text-gray-400 hover:text-primary transition-colors font-normal">Re-Autenticar
+                                                (Trocar Número)</button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-4">A Conta 1 é a conta operadora principal. A Conta 2
+                            funciona
+                            silenciosamente como fallback em caso de limites e restrições da API (FloodWait) para evitar
+                            a
+                            interrupção da clonagem.</p>
+                    </div>
+                </div>
+
+                <!-- ABA DE CONFIGURAÇÕES -->
+                <div x-show="isAuthenticated && currentTab === 'settings'" class="max-w-3xl mx-auto space-y-6">
+                    <!-- LOGIN DO PAINEL WEB -->
+                    <div class="bg-card rounded-xl p-6 shadow border border-gray-800">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="font-bold text-lg text-white">Configurações Gerais do Sistema</h2>
+                            <button @click="saveSettings()"
+                                class="px-4 py-2 text-sm bg-primary text-white rounded font-bold hover:bg-blue-600 shadow">Salvar
+                                Configurações</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="text-xs text-gray-400 font-bold block mb-1">Novo Usuário Admin</label>
+                                <input type="text" x-model="appSettings.panel_username"
+                                    placeholder="Deixe em branco para manter"
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary transition-colors">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 font-bold block mb-1">Nova Senha Admin</label>
+                                <input type="password" x-model="appSettings.panel_password"
+                                    placeholder="Deixe em branco para manter"
+                                    class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary transition-colors">
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-gray-800">
+                            <h3 class="font-bold text-md text-white mb-2">Opções Avançadas do Telegram</h3>
+                            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                                <input type="checkbox" x-model="appSettings.premium_account" class="w-4 h-4 text-primary rounded bg-background border-gray-700">
+                                <span>Conta Premium (Preservar Emojis Customizados)</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1 ml-6">
+                                Marque essa opção apenas se a conta de origem/destino for assinante do Telegram Premium. Caso contrário, mensagens com emojis customizados poderão causar erros.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ABA DE LOGS -->
+                <div x-show="isAuthenticated && currentTab === 'logs'" class="space-y-6 max-w-5xl mx-auto">
+                    <!-- ESTATÍSTICAS DE FALHAS E ATUALIZAR -->
+                    <div class="flex justify-between items-end mb-4">
+                        <h2 class="font-bold text-lg text-white">Eventos e Logs do Sistema</h2>
+                        <button @click="loadData()"
+                            class="px-4 py-2 text-sm bg-gray-800 border border-gray-700 text-gray-300 rounded font-bold hover:bg-gray-700 hover:text-white shadow transition-colors">
+                            Atualizar Logs
+                        </button>
+                    </div>
+
+                    <div x-show="stats.failed > 0" class="bg-card border border-red-900/30 rounded-xl p-6 shadow mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-red-500 font-bold flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                    </path>
+                                </svg>
+                                Mensagens com Falha (Pendente de retry)
+                            </h3>
+                            <button @click="loadFailedMessages()"
+                                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-bold transition">Visualizar
+                                Falhas</button>
+                        </div>
+                        <p class="text-sm text-gray-400">Existem <strong x-text="stats.failed"
+                                class="text-white"></strong>
+                            mensagens que não puderam ser entregues no checkpoint atual. Clique para gerenciar e
+                            reenviar.</p>
+                    </div>
+
+                    <!-- TERMINAL LOGS DA API -->
+                    <div
+                        class="bg-card rounded-xl p-4 shadow border border-gray-800 h-[60vh] overflow-y-auto font-mono text-xs flex flex-col">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-card z-10 shadow-sm pb-2">
+                                <tr>
+                                    <th class="text-gray-500 pb-3 font-normal border-b border-gray-800 w-24">Horário
+                                    </th>
+                                    <th class="text-gray-500 pb-3 font-normal border-b border-gray-800 w-20">Nível</th>
+                                    <th class="text-gray-500 pb-3 font-normal border-b border-gray-800">Evento</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800/50">
+                                <template x-if="serverLogs.length === 0">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-gray-600 py-8">Nenhum log encontrado.
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-for="log in serverLogs">
+                                    <tbody x-data="{ expanded: false }" class="divide-y divide-gray-800/50">
+                                        <tr class="hover:bg-gray-800/30 transition-colors">
+                                            <td class="py-3 text-gray-400 align-top" x-text="log.time"></td>
+                                            <td class="py-3 font-bold align-top" :class="{
+                                            'text-green-500': log.level === 'OK' || log.level === 'INFO',
+                                            'text-yellow-500': log.level === 'WARN' || log.level === 'WARNING',
+                                            'text-red-500': log.level === 'ERROR' || log.level === 'CRITICAL'
+                                        }" x-text="log.level"></td>
+                                            <td class="py-3 text-gray-300 align-top">
+                                                <div class="whitespace-pre-wrap" x-text="log.event"></div>
+                                                <template x-if="log.details">
+                                                    <div class="mt-2">
+                                                        <button @click="expanded = !expanded" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded transition-colors flex items-center gap-1 border border-gray-700">
+                                                            <span x-text="expanded ? '▼' : '▶'"></span>
+                                                            Detalhes JSON
+                                                        </button>
+                                                        <div x-show="expanded" class="mt-2">
+                                                            <pre class="bg-black/50 p-3 rounded-lg overflow-x-auto text-xs text-green-400 font-mono border border-gray-800" x-text="JSON.stringify(log.details, null, 2)"></pre>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+                        <!-- START FAILED MODAL -->
+                        <!-- Modal de Lista de Falhas -->
+            <div x-show="showFailedModal"
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+                <div
+                    class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-2xl w-full shadow-lg relative flex flex-col max-h-[80vh]">
+                    <button @click="showFailedModal = false"
+                        class="absolute top-4 right-4 text-gray-500 hover:text-red-500">&times;</button>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        Mensagens com Falha
+                    </h2>
+
+                    <div class="flex-1 overflow-y-auto mb-4 border dark:border-gray-700 rounded p-2">
+                        <template x-if="failedMessages.length === 0 && !failedLoading">
+                            <div class="text-center text-gray-500 p-8">Nenhuma falha encontrada para este trajeto.</div>
+                        </template>
+                        <template x-if="failedLoading">
+                            <div class="text-center text-gray-500 p-8">Carregando...</div>
+                        </template>
+                        <div class="space-y-2">
+                            <template x-for="fail in failedMessages" :key="fail.id">
+                                <div
+                                    class="bg-red-50 dark:bg-red-900/10 p-3 rounded border border-red-100 dark:border-red-900/30 text-sm">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <span class="font-bold text-red-600 dark:text-red-400"
+                                            x-text="'Mensagem ID: ' + fail.message_id"></span>
+                                        <span
+                                            class="text-xs bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 px-2 rounded-full"
+                                            x-text="fail.status"></span>
+                                    </div>
+                                    <div class="text-gray-600 dark:text-gray-300"
+                                        x-text="fail.error_message || 'Erro desconhecido'"></div>
+                                    <template x-if="fail.original_data">
+                                        <details class="mt-2 text-[10px] text-gray-500 bg-black/20 p-2 rounded border border-gray-800">
+                                            <summary class="cursor-pointer font-bold text-gray-400 hover:text-white transition">Detalhes Técnicos da Mensagem (JSON)</summary>
+                                            <pre class="mt-2 whitespace-pre-wrap overflow-x-auto text-blue-400" x-text="fail.original_data"></pre>
+                                        </details>
+                                    </template>
+                                    <div class="text-xs text-gray-400 mt-1"
+                                        x-text="'Tentativas: ' + fail.retry_count + '/' + fail.max_retries"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <button @click="showFailedModal = false"
+                            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition">Fechar</button>
+                        <button @click="retryFailed(); showFailedModal = false"
+                            class="px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition"
+                            :disabled="failedMessages.length === 0">Tentar Novamente Todas</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Login no Telegram (Conta 1 e 2) -->
+            <div x-show="showTgAuthModal"
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+                <div class="bg-white dark:bg-gray-800 p-8 rounded-xl max-w-sm w-full shadow-lg relative">
+                    <button @click="showTgAuthModal = false"
+                        class="absolute top-4 right-4 text-gray-500 hover:text-red-500">&times;</button>
+                    <h2 class="text-xl font-bold mb-4" x-text="'Login - Conta ' + tgAuth.account"></h2>
+
+                    <!-- Passo 1: Telefone -->
+                    <form @submit.prevent="tgSendCode" x-show="tgAuth.step === 'phone'" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">API ID</p>
+                                <input type="number" x-model="tgAuth.apiId" placeholder="123456"
+                                    class="w-full px-4 py-2 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    required>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">API Hash</p>
+                                <input type="text" x-model="tgAuth.apiHash" placeholder="abc..."
+                                    class="w-full px-4 py-2 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    required>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Insira o telefone com código do país
+                            (ex:
+                            +5511999999999)</p>
+                        <input type="text" x-model="tgAuth.phone" placeholder="+55..."
+                            class="w-full px-4 py-2 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
+                        <button type="submit" class="w-full py-2 bg-telegram text-white rounded font-bold"
+                            :disabled="tgAuth.loading">
+                            <span x-show="!tgAuth.loading">Enviar Código</span>
+                            <span x-show="tgAuth.loading">Enviando...</span>
+                        </button>
+                    </form>
+
+                    <!-- Passo 2: Código SMS -->
+                    <form @submit.prevent="tgSubmitCode" x-show="tgAuth.step === 'code'" class="space-y-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Código enviado para o Telegram.</p>
+                        <input type="text" x-model="tgAuth.code" placeholder="Código (ex: 12345)"
+                            class="w-full px-4 py-2 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
+                        <button type="submit" class="w-full py-2 bg-telegram text-white rounded font-bold"
+                            :disabled="tgAuth.loading">
+                            <span x-show="!tgAuth.loading">Entrar</span>
+                            <span x-show="tgAuth.loading">Verificando...</span>
+                        </button>
+                    </form>
+
+                    <!-- Passo 3: Senha 2FA (se necessário) -->
+                    <form @submit.prevent="tgSubmitPassword" x-show="tgAuth.step === 'password'" class="space-y-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Conta protegida por verificação em duas
+                            etapas
+                            (2FA).</p>
+                        <input type="password" x-model="tgAuth.password" placeholder="Sua senha..."
+                            class="w-full px-4 py-2 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
+                        <button type="submit" class="w-full py-2 bg-telegram text-white rounded font-bold"
+                            :disabled="tgAuth.loading">
+                            <span x-show="!tgAuth.loading">Entrar</span>
+                            <span x-show="tgAuth.loading">Verificando...</span>
+                        </button>
+                    </form>
+
+                    <div x-show="tgAuth.error"
+                        class="mt-4 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded border border-red-300 dark:border-red-800"
+                        x-text="tgAuth.error"></div>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('alpine:init', () => {
+                    Alpine.data('app', () => ({
+                        isAuthenticated: false,
+                        token: localStorage.getItem('tm_token'),
+                        isDarkMode: localStorage.getItem('tm_theme') !== 'light',
+                        loginForm: { username: '', password: '' },
+                        chats: [], searchSource: '', searchDest: '',
+                        filterSource: 'all', filterDest: 'all',
+                        replaceForm: {
+                            link1_old: '', link1_new: '', link2_old: '', link2_new: '', link3_old: '', link3_new: '',
+                            user1_old: '', user1_new: '', user2_old: '', user2_new: '', user3_old: '', user3_new: ''
+                        },
+                        isGlobalDebugMode: false, config: { source_chat_id: null, dest_chat_id: null, mode: 'replicate', scope: 'history', speed_profile: 'safe', debug_mode: false },
+                        sysStatus: 'idle', stats: { processed: 0, failed: 0 },
+                        hwStats: { cpu: 0, ram: 0, disk: 0, disk_free_mb: 0, is_critical: false },
+                        serverLogs: [],
+                        ws: null,
+
+                        // Auth States
+                        accounts: [], activeAccount: null,
+                        showTgAuthModal: false,
+                        tgAuth: { step: 'phone', account: 1, phone: '', apiId: '', apiHash: '', code: '', password: '', hash: '', error: '', loading: false },
+                        appSettings: { panel_password: '' },
+                        currentTab: 'dashboard',
+                        mobileMenu: false,
+                        feedMessages: [],
+                        feedLoading: false,
+                        hasMoreFeed: true,
+                        selectedFeedMessages: [],
+
+                        // Checkpoint e Falhas States
+                        showFailedModal: false,
+                        failedMessages: [],
+                        failedLoading: false,
+                        currentCheckpoint: null,
+                        checkpointInputId: '',
+
+                        singleTestInput: '',
+
+                        init() {
+                            this.applyTheme();
+                            if (this.token) {
+                                this.isAuthenticated = true;
+                                this.loadData();
+                                this.connectWS();
+                                this.watchChatsForCheckpoint();
+                            }
+                        },
+                        toggleTheme() {
+                            this.isDarkMode = !this.isDarkMode;
+                            localStorage.setItem('tm_theme', this.isDarkMode ? 'dark' : 'light');
+                            this.applyTheme();
+                        },
+                        applyTheme() {
+                            if (this.isDarkMode) document.documentElement.classList.add('dark');
+                            else document.documentElement.classList.remove('dark');
+                        },
+                        api(url, opts = {}) {
+                            if (DEBUG_MODE) console.log(`[DEBUG] api() call starting - URL: ${url}`, "opts:", JSON.parse(JSON.stringify(opts)));
+                            opts.headers = { 'Content-Type': 'application/json' };
+                            if (this.token) {
+                                opts.headers['Authorization'] = `Bearer ${this.token}`;
+                            }
+                            return fetch(`/api${url}`, opts).then(async r => {
+                                if (DEBUG_MODE) console.log(`[DEBUG] api() response received - URL: ${url}, status: ${r.status}`);
+                                if (r.status === 401 && url !== '/auth/login') {
+                                    if (DEBUG_MODE) console.warn(`[DEBUG] api() 401 Unauthorized for URL: ${url} (logging out)`);
+                                    this.logout();
+                                    return { s: r.status, d: { detail: "Não autorizado" } };
+                                }
+                                const d = await r.json().catch(() => ({}));
+                                if (DEBUG_MODE) console.log(`[DEBUG] api() parsed JSON for URL: ${url}`, d);
+                                return { s: r.status, d };
+                            }).catch(err => {
+                                if (DEBUG_MODE) console.error(`[DEBUG] api() fetch error for URL: ${url}`, err);
+                                throw err;
+                            });
+                        },
+                        async login() {
+                            let r = await this.api('/auth/login', { method: 'POST', body: JSON.stringify(this.loginForm) });
+                            if (r.s === 200) { this.token = r.d.access_token; localStorage.setItem('tm_token', this.token); this.init(); }
+                        },
+                        logout() { this.token = null; this.isAuthenticated = false; localStorage.removeItem('tm_token'); },
+                        async loadData() {
+                            let rSet = await this.api('/config/app-settings');
+                            if (rSet.s === 200) { this.appSettings = rSet.d; this.isGlobalDebugMode = rSet.d.debug_mode === true; window.DEBUG_MODE = this.isGlobalDebugMode; }
+
+                            let rAcc = await this.api('/accounts');
+                            if (rAcc.s === 200) {
+                                this.accounts = rAcc.d.accounts;
+                                this.activeAccount = rAcc.d.active_account;
+                            }
+
+                            let r = await this.api('/chats'); if (r.s === 200) this.chats = r.d.chats || [];
+                            let rStatus = await this.api('/flow/status'); if (rStatus.s === 200) this.sysStatus = rStatus.d.is_running ? 'running' : (rStatus.d.is_paused ? 'paused' : 'idle');
+
+                            let rLogs = await this.api('/logs/recent');
+                            if (rLogs.s === 200) this.serverLogs = rLogs.d.logs;
+
+                            // Adiciona notificacao de Crash se o servidor enviou no init
+                            this.log("Verificando resíduos pós-crash...", "INFO");
+                        },
+
+                        async saveSettings() {
+                            let r = await this.api('/config/app-settings', {
+                                method: 'POST', body: JSON.stringify(this.appSettings)
+                            });
+                            if (r.s === 200) {
+                                this.log("> Configurações de API Salvas.", "OK");
+                            }
+                        },
+
+                        // Observa mudancas em Source e Dest para buscar o checkpoint atual
+                        watchChatsForCheckpoint() {
+                            this.$watch('config.source_chat_id', () => {
+                                this.fetchCurrentCheckpoint();
+                                if (this.config.source_chat_id && this.config.scope === 'checkpoint') {
+                                    this.selectSourceChat(this.config.source_chat_id);
+                                }
+                            });
+                            this.$watch('config.dest_chat_id', () => this.fetchCurrentCheckpoint());
+                            this.$watch('config.scope', () => {
+                                if (this.config.source_chat_id && this.config.scope === 'checkpoint') {
+                                    this.selectSourceChat(this.config.source_chat_id);
+                                }
+                            });
+                        },
+                        async fetchCurrentCheckpoint() {
+                            if (!this.config.source_chat_id || !this.config.dest_chat_id) {
+                                this.currentCheckpoint = null;
+                                return;
+                            }
+                            let r = await this.api('/checkpoint/current', {
+                                method: 'POST', body: JSON.stringify({ source_chat_id: this.config.source_chat_id, dest_chat_id: this.config.dest_chat_id })
+                            });
+                            if (r.s === 200) {
+                                this.currentCheckpoint = r.d.checkpoint;
+                                if (this.currentCheckpoint) {
+                                    this.checkpointInputId = this.currentCheckpoint.last_message_id;
+                                    this.stats.processed = this.currentCheckpoint.total_copied;
+                                    this.stats.failed = this.currentCheckpoint.total_failed;
+                                } else {
+                                    this.checkpointInputId = '';
+                                }
+                            }
+                        },
+                        async setCheckpointPosition() {
+                            if(!this.config.source_chat_id || !this.config.dest_chat_id) {
+                                alert("Selecione Origem e Destino primeiro para definir um Checkpoint!");
+                                return;
+                            }
+                            let newId = parseInt(this.checkpointInputId);
+                            if (isNaN(newId)) return;
+
+                            let payload = {
+                                source_chat_id: this.config.source_chat_id,
+                                dest_chat_id: this.config.dest_chat_id,
+                                mode: this.config.mode,
+                                scope: this.config.scope,
+                                message_id: newId
+                            };
+
+                            let r = await this.api('/checkpoint/set-position', {
+                                method: 'POST', body: JSON.stringify(payload)
+                            });
+                            if (r.s === 200) {
+                                this.log("> Posição do checkpoint atualizada para " + newId, "OK");
+                                await this.fetchCurrentCheckpoint();
+                            }
+                        },
+
+                        async testSingleMessage() {
+                            if (!this.config.source_chat_id || !this.config.dest_chat_id) {
+                                alert("Selecione Origem e Destino primeiro.");
+                                return;
+                            }
+                            let input = this.singleTestInput.trim();
+                            if (!input) return;
+
+                            let msgId = null;
+                            if (input.includes('/')) {
+                                let parts = input.split('/');
+                                msgId = parseInt(parts[parts.length - 1]);
+                            } else {
+                                msgId = parseInt(input);
+                            }
+
+                            if (isNaN(msgId)) {
+                                alert("ID da mensagem inválido.");
+                                return;
+                            }
+
+                            this.log(`> Iniciando teste único da mensagem ID: ${msgId}...`, "INFO");
+
+                            let payload = {
+                                source_chat_id: this.config.source_chat_id,
+                                dest_chat_id: this.config.dest_chat_id,
+                                mode: this.config.mode,
+                                scope: 'history',
+                                speed_profile: this.config.speed_profile,
+                                selective_ids: [msgId]
+                            };
+
+                            let r = await this.api('/flow/start', {
+                                method: 'POST', body: JSON.stringify(payload)
+                            });
+                            if (r.s === 200) {
+                                this.sysStatus = 'running';
+                                this.singleTestInput = '';
+                            }
+                        },
+
+                        async loadFailedMessages() {
+                            if (this.stats.failed === 0 || !this.currentCheckpoint) return;
+                            this.showFailedModal = true;
+                            this.failedLoading = true;
+                            this.failedMessages = [];
+
+                            let r = await this.api(`/failed-logs/${this.currentCheckpoint.id}`);
+                            if (r.s === 200) {
+                                this.failedMessages = r.d.failed_messages;
+                            }
+                            this.failedLoading = false;
+                        },
+
+                        async selectSourceChat(chatId) {
+                            this.config.source_chat_id = chatId;
+                            this.feedLoading = true;
+                            this.feedMessages = [];
+                            this.hasMoreFeed = true;
+
+                            // Busca Checkpoint primeiro para centralizar o fetch se for o modo Retomar
+                            await this.fetchCurrentCheckpoint();
+
+                            let url = `/chats/${chatId}/messages?limit=50`;
+                            if (this.config.scope === 'checkpoint' && this.currentCheckpoint && this.currentCheckpoint.last_message_id > 0) {
+                                url += `&around_id=${this.currentCheckpoint.last_message_id}`;
+                            }
+
+                            let r = await this.api(url);
+                            if (r.s === 200) {
+                                this.feedMessages = r.d.messages.reverse(); // Ordem cronologica para leitura
+
+                                this.$nextTick(() => {
+                                    const container = document.getElementById('feed-container');
+                                    if (!container) return;
+
+                                    if (this.config.scope === 'checkpoint' && this.currentCheckpoint && this.currentCheckpoint.last_message_id > 0) {
+                                        // Foco automatico na mensagem do Checkpoint
+                                        const cpEl = document.getElementById('msg-' + this.currentCheckpoint.last_message_id);
+                                        if (cpEl) {
+                                            cpEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        } else {
+                                            container.scrollTop = container.scrollHeight;
+                                        }
+                                    } else {
+                                        // Inicia no fim da lista (mensagens mais recentes)
+                                        container.scrollTop = container.scrollHeight;
+                                    }
+                                });
+                            }
+                            this.feedLoading = false;
+                        },
+
+                        handleFeedScroll(e) {
+                            // Infinite scroll ao chegar no topo
+                            if (e.target.scrollTop <= 5 && !this.feedLoading && this.hasMoreFeed && this.feedMessages.length > 0) {
+                                this.loadMoreFeed();
+                            }
+                        },
+
+                        async loadMoreFeed() {
+                            if (!this.config.source_chat_id) return;
+                            this.feedLoading = true;
+
+                            const oldestMsgId = this.feedMessages[0].id; // Primeiro elemento é o mais antigo na UI (menor ID)
+                            let r = await this.api(`/chats/${this.config.source_chat_id}/messages?limit=50&offset_id=${oldestMsgId}`);
+
+                            if (r.s === 200) {
+                                const olderMessages = r.d.messages.reverse();
+                                if (olderMessages.length === 0) {
+                                    this.hasMoreFeed = false;
+                                } else {
+                                    // Guarda o elemento que estava no topo para ancorar o scroll
+                                    const container = document.getElementById('feed-container');
+                                    const anchorMsgId = this.feedMessages[0].id;
+
+                                    this.feedMessages = [...olderMessages, ...this.feedMessages];
+
+                                    // Restaura a posição do scroll para não "pular"
+                                    this.$nextTick(() => {
+                                        const anchorEl = document.getElementById('msg-' + anchorMsgId);
+                                        if (anchorEl && container) {
+                                            anchorEl.scrollIntoView({ behavior: 'instant', block: 'start' });
+                                            // Puxa um pouco para baixo para compensar o header do feed
+                                            container.scrollTop -= 20;
+                                        }
+                                    });
+                                }
+                            }
+                            this.feedLoading = false;
+                        },
+
+                        filteredChats(q, filterType) {
+                            return this.chats.filter(c => {
+                                const matchText = c.title.toLowerCase().includes(q.toLowerCase());
+                                const matchType = filterType === 'all' ? true : (filterType === 'channel' ? c.chat_type === 'channel' : c.chat_type === 'group');
+                                return matchText && matchType;
+                            });
+                        },
+
+                        // === TG Auth Methods ===
+                        openTgLogin(accNum) {
+                            this.tgAuth = { step: 'phone', account: accNum, phone: '', apiId: '', apiHash: '', code: '', password: '', hash: '', error: '', loading: false };
+                            this.showTgAuthModal = true;
+                        },
+                        async tgSendCode() {
+                            if (DEBUG_MODE) console.log("[DEBUG] tgSendCode called with state:", JSON.parse(JSON.stringify(this.tgAuth)));
+                            if (!this.tgAuth.apiId || !this.tgAuth.apiHash) {
+                                if (DEBUG_MODE) console.warn("[DEBUG] tgSendCode aborted: missing apiId or apiHash");
+                                this.tgAuth.error = "API ID e API Hash são obrigatórios.";
+                                return;
+                            }
+                            this.tgAuth.loading = true;
+                            this.tgAuth.error = '';
+                            if (DEBUG_MODE) console.log("[DEBUG] tgSendCode posting to /tg-auth/send-code for account:", this.tgAuth.account, "phone:", this.tgAuth.phone);
+                            let r = await this.api('/tg-auth/send-code', {
+                                method: 'POST', body: JSON.stringify({ account_number: this.tgAuth.account, phone: this.tgAuth.phone, api_id: parseInt(this.tgAuth.apiId), api_hash: this.tgAuth.apiHash })
+                            });
+                            this.tgAuth.loading = false;
+                            if (r.s === 200) {
+                                if (DEBUG_MODE) console.log("[DEBUG] tgSendCode success. hash:", r.d.phone_code_hash);
+                                this.tgAuth.hash = r.d.phone_code_hash;
+                                this.tgAuth.step = 'code';
+                            } else {
+                                if (DEBUG_MODE) console.error("[DEBUG] tgSendCode failed. error:", r.d.detail);
+                                this.tgAuth.error = r.d.detail || "Erro ao enviar código";
+                            }
+                        },
+                        async tgSubmitCode() {
+                            this.tgAuth.loading = true;
+                            this.tgAuth.error = '';
+                            let r = await this.api('/tg-auth/login', {
+                                method: 'POST', body: JSON.stringify({ account_number: this.tgAuth.account, phone: this.tgAuth.phone, code: this.tgAuth.code, phone_code_hash: this.tgAuth.hash, api_id: parseInt(this.tgAuth.apiId), api_hash: this.tgAuth.apiHash })
+                            });
+                            this.tgAuth.loading = false;
+                            if (r.s === 200) {
+                                if (r.d.status === '2fa_required') {
+                                    this.tgAuth.step = 'password';
+                                } else {
+                                    this.showTgAuthModal = false;
+                                    this.loadData();
+                                }
+                            } else {
+                                this.tgAuth.error = r.d.detail || "Código inválido";
+                            }
+                        },
+                        async tgSubmitPassword() {
+                            this.tgAuth.loading = true;
+                            this.tgAuth.error = '';
+                            let r = await this.api('/tg-auth/login/2fa', {
+                                method: 'POST', body: JSON.stringify({ account_number: this.tgAuth.account, password: this.tgAuth.password })
+                            });
+                            this.tgAuth.loading = false;
+                            if (r.s === 200) {
+                                this.showTgAuthModal = false;
+                                this.loadData();
+                            } else {
+                                this.tgAuth.error = r.d.detail || "Senha inválida";
+                            }
+                        },
+                        // =======================
+
+                        async applyReplacements() {
+                            let r = await this.api('/config/regex-rules');
+                            if (r.s === 200 && r.d.rules) for (let rl of r.d.rules) await this.api(`/config/regex-rules/${rl.id}`, { method: 'DELETE' });
+
+                            if (this.replaceForm.link1_old) await this.api('/config/regex-rules', { method: 'POST', body: JSON.stringify({ old_value: this.replaceForm.link1_old, new_value: this.replaceForm.link1_new, rule_type: 'link' }) });
+                            if (this.replaceForm.link2_old) await this.api('/config/regex-rules', { method: 'POST', body: JSON.stringify({ old_value: this.replaceForm.link2_old, new_value: this.replaceForm.link2_new, rule_type: 'link' }) });
+                            if (this.replaceForm.link3_old) await this.api('/config/regex-rules', { method: 'POST', body: JSON.stringify({ old_value: this.replaceForm.link3_old, new_value: this.replaceForm.link3_new, rule_type: 'link' }) });
+
+                            if (this.replaceForm.user1_old) await this.api('/config/regex-rules', { method: 'POST', body: JSON.stringify({ old_value: this.replaceForm.user1_old, new_value: this.replaceForm.user1_new, rule_type: 'username' }) });
+                            if (this.replaceForm.user2_old) await this.api('/config/regex-rules', { method: 'POST', body: JSON.stringify({ old_value: this.replaceForm.user2_old, new_value: this.replaceForm.user2_new, rule_type: 'username' }) });
+                            if (this.replaceForm.user3_old) await this.api('/config/regex-rules', { method: 'POST', body: JSON.stringify({ old_value: this.replaceForm.user3_old, new_value: this.replaceForm.user3_new, rule_type: 'username' }) });
+
+                            this.log("> Regras de substituição salvas e prontas para uso.", "OK");
+                        },
+                        async retryFailed() {
+                            if (!this.config.source_chat_id || !this.config.dest_chat_id) { alert("Selecione Origem/Destino!"); return; }
+                            // Exemplo para o CP_ID 1, mas idealmente buscaria o Checkpoint real pelo par origem/destino.
+                            let r = await this.api(`/flow/retry/1`, { method: 'POST' });
+                            if (r.s === 200) this.log("> Worker de Retry iniciado.", "OK");
+                        },
+                        async startFlow() {
+                            if (DEBUG_MODE) console.log("[DEBUG] startFlow called with config:", JSON.parse(JSON.stringify(this.config)), "selectedFeedMessages:", this.selectedFeedMessages);
+                            const payload = { ...this.config };
+
+                            // Apenas enviar ids seletivos se for historico e tiver caixas marcadas
+                            if (this.config.scope === 'history' && this.selectedFeedMessages.length > 0) {
+                                payload.selective_ids = this.selectedFeedMessages.map(id => parseInt(id, 10));
+                                if (DEBUG_MODE) console.log("[DEBUG] startFlow selective_ids payload:", payload.selective_ids);
+                            } else {
+                                payload.selective_ids = [];
+                                if (DEBUG_MODE) console.log("[DEBUG] startFlow no selective_ids");
+                            }
+
+                            if (DEBUG_MODE) console.log("[DEBUG] startFlow posting to /flow/start:", payload);
+                            await this.api('/flow/start', { method: 'POST', body: JSON.stringify(payload) });
+                            this.sysStatus = 'running';
+                            this.log("> Iniciando rotina...", "INFO");
+                        },
+                        async pauseFlow() {
+                            if (DEBUG_MODE) console.log("[DEBUG] pauseFlow called");
+                            await this.api('/flow/pause', { method: 'POST' }); this.sysStatus = 'paused'; this.log("> Pausado.", "WARN");
+                        },
+                        async stopFlow() { await this.api('/flow/stop', { method: 'POST' }); this.sysStatus = 'idle'; this.log("> Parado com segurança.", "WARN"); },
+                        async shutdownSystem() {
+                            if (confirm("Deseja realmente desligar o sistema? Isso parará todos os envios e fechará o servidor local.")) {
+                                await this.api('/system/shutdown', { method: 'POST' });
+                                alert("A aplicação foi encerrada. Você já pode fechar esta janela.");
+                                this.sysStatus = "OFFLINE";
+                                this.isAuthenticated = false;
+                                if (this.ws) this.ws.close();
+                            }
+                        },
+                        connectWS() {
+                            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                            this.ws = new WebSocket(`${proto}//${window.location.host}/api/ws?token=${this.token}`);
+                            this.ws.onmessage = e => {
+                                let p = JSON.parse(e.data);
+                                if (p.type === 'progress') { this.stats.processed = p.data.processed; this.stats.failed = p.data.failed; }
+                                else if (p.type === 'log') {
+                                    this.log(p.data.message, p.data.level === 'error' ? 'ERROR' : (p.data.level === 'warn' ? 'WARN' : 'INFO'), p.data.details);
+                                }
+                                else if (p.type === 'status_change') { this.sysStatus = p.data.status; this.loadData(); }
+                                else if (p.type === 'hardware_stats') this.hwStats = p.data;
+                            };
+                        },
+                        log(msg, level = "INFO", details = null) {
+                            const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+                            this.serverLogs.unshift({ time: now, level: level, event: msg, details: details });
+                            if (this.serverLogs.length > 100) this.serverLogs.pop();
+                        }
+                    }))
+                });
+            </script>
+</body>
+
+</html>
