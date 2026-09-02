@@ -12,7 +12,7 @@ import asyncio
 import os
 import time
 from src.services.copier.entity_parser import EntityParser
-from src.utils.logger import logger
+from src.utils.logger import logger, ws_log
 
 class AlbumCopier:
     """
@@ -83,12 +83,16 @@ class AlbumCopier:
         total_items = len(album_messages)
         group_id = album_messages[0].grouped_id
 
-        logger.info("Processando álbum (Grupo ID: %s) com %d itens. Iniciando download das mídias...", group_id, total_items)
+        msg_info = f"Processando álbum (Grupo ID: {group_id}) com {total_items} itens. Iniciando download das mídias..."
+        logger.info(msg_info)
+        await ws_log(msg_info, "INFO")
 
         try:
             # Baixa todas as mídias do álbum
             for i, msg in enumerate(album_messages, start=1):
-                logger.info("Baixando arquivo %d/%d do álbum (Mensagem ID: %d)...", i, total_items, msg.id)
+                msg_down = f"Baixando arquivo {i}/{total_items} do álbum (Mensagem ID: {msg.id})..."
+                logger.info(msg_down)
+                await ws_log(msg_down, "INFO")
                 
                 last_download_log = time.time()
                 async def download_progress(current, total):
@@ -96,15 +100,21 @@ class AlbumCopier:
                     now = time.time()
                     if now - last_download_log > 5:
                         percent = (current / total) * 100 if total else 0
-                        logger.info("Progresso do download do álbum (%d/%d): %.1f%% (%d/%d bytes)", i, total_items, percent, current, total)
+                        prog_msg = f"Progresso do download do álbum ({i}/{total_items}): {percent:.1f}% ({current}/{total} bytes)"
+                        logger.info(prog_msg)
+                        await ws_log(prog_msg, "INFO")
                         last_download_log = now
 
                 media_path = await self._client.download_media(msg, file="data/temp/", progress_callback=download_progress)
                 if media_path is None:
-                    logger.warning("Não foi possível baixar mídia do item %d do álbum.", msg.id)
+                    warn_msg = f"Não foi possível baixar mídia do item {msg.id} do álbum."
+                    logger.warning(warn_msg)
+                    await ws_log(warn_msg, "WARN")
                     media_files.append("")
                 else:
-                    logger.info("Arquivo %d/%d baixado com sucesso.", i, total_items)
+                    succ_msg = f"Arquivo {i}/{total_items} baixado com sucesso."
+                    logger.info(succ_msg)
+                    await ws_log(succ_msg, "OK")
                     media_files.append(media_path)
 
                 # Captura legenda e entidades de cada item
@@ -126,7 +136,9 @@ class AlbumCopier:
             caps = [item[1] for item in valid_items]
             ents = [item[2] for item in valid_items]
 
-            logger.info("Todos os %d arquivos do álbum foram baixados. Iniciando o envio para o destino %d...", len(files), dest_chat_id)
+            end_down_msg = f"Todos os {len(files)} arquivos do álbum foram baixados. Iniciando o envio para o destino {dest_chat_id}..."
+            logger.info(end_down_msg)
+            await ws_log(end_down_msg, "INFO")
 
             last_upload_log = time.time()
             async def upload_progress(current, total):
@@ -134,10 +146,12 @@ class AlbumCopier:
                 now = time.time()
                 if now - last_upload_log > 5:
                     if isinstance(current, float):
-                        logger.info("Progresso do envio do álbum: %.1f / %d arquivos", current, total)
+                        prog_msg = f"Progresso do envio do álbum: {current:.1f} / {total} arquivos"
                     else:
                         percent = (current / total) * 100 if total else 0
-                        logger.info("Progresso do envio do álbum: %.1f%% (%d/%d bytes)", percent, current, total)
+                        prog_msg = f"Progresso do envio do álbum: {percent:.1f}% ({current}/{total} bytes)"
+                    logger.info(prog_msg)
+                    await ws_log(prog_msg, "INFO")
                     last_upload_log = now
 
             # Envia como álbum — Telethon send_file com lista de arquivos
@@ -155,10 +169,9 @@ class AlbumCopier:
             if not isinstance(sent_messages, list):
                 sent_messages = [sent_messages]
 
-            logger.info(
-                "Álbum replicado com sucesso! %d itens enviados para %d.",
-                len(sent_messages), dest_chat_id,
-            )
+            succ_msg = f"Álbum replicado com sucesso! {len(sent_messages)} itens enviados para {dest_chat_id}."
+            logger.info(succ_msg)
+            await ws_log(succ_msg, "OK")
             return sent_messages
 
         except FloodWaitError:
@@ -198,7 +211,9 @@ class AlbumCopier:
 
         total_items = len(album_messages)
         group_id = album_messages[0].grouped_id
-        logger.info("Processando encaminhamento de álbum (Grupo ID: %s) com %d itens. Encaminhando de %d para %d...", group_id, total_items, source_chat_id, dest_chat_id)
+        msg_info = f"Processando encaminhamento de álbum (Grupo ID: {group_id}) com {total_items} itens. Encaminhando de {source_chat_id} para {dest_chat_id}..."
+        logger.info(msg_info)
+        await ws_log(msg_info, "INFO")
 
         try:
             message_ids = [msg.id for msg in album_messages]
@@ -209,10 +224,11 @@ class AlbumCopier:
             )
             if not isinstance(result, list):
                 result = [result]
-            logger.info(
-                "Álbum encaminhado com sucesso! %d itens enviados para %d.",
-                len(result), dest_chat_id,
-            )
+            
+            succ_msg = f"Álbum encaminhado com sucesso! {len(result)} itens enviados para {dest_chat_id}."
+            logger.info(succ_msg)
+            await ws_log(succ_msg, "OK")
+            
             return result
         except FloodWaitError:
             raise
