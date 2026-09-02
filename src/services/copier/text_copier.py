@@ -19,10 +19,9 @@ class TextCopier:
     """
 
     @log_execution
-    def __init__(self, client: TelegramClient, preserve_custom_emojis: bool = False):
+    def __init__(self, client: TelegramClient):
         self._client = client
         self._parser = EntityParser()
-        self._preserve_custom_emojis = preserve_custom_emojis
 
     @log_execution
     async def replicate_message(
@@ -67,7 +66,7 @@ class TextCopier:
     @log_execution
     async def _send_text(self, dest_chat_id: int, parsed: ParsedMessage, reply_to: int | None = None) -> Message | None:
         """Envia uma mensagem de texto puro com entidades."""
-        entities = self._parser.clone_entities(parsed.entities, preserve_custom_emojis=self._preserve_custom_emojis)
+        entities = self._parser.clone_entities(parsed.entities)
         sent = await self._client.send_message(
             entity=dest_chat_id,
             message=parsed.text,
@@ -90,7 +89,7 @@ class TextCopier:
         Envia mídia (foto/vídeo/documento) com legenda e entidades preservadas.
         Baixa a mídia temporariamente e reenvia preservando a qualidade.
         """
-        entities = self._parser.clone_entities(parsed.entities, preserve_custom_emojis=self._preserve_custom_emojis)
+        entities = self._parser.clone_entities(parsed.entities)
 
         try:
             # Baixa a mídia para um arquivo temporário
@@ -103,10 +102,10 @@ class TextCopier:
                     return await self._send_text(dest_chat_id, parsed)
                 return None
 
-            # Limite de 1024 caracteres para contas normais (Premium permite 2048/4096)
+            # Limite de 4096 caracteres para contas Premium
             caption = parsed.text or ""
             is_split = False
-            if len(caption) > 1024:
+            if len(caption) > 4096:
                 is_split = True
                 send_caption = ""
                 send_entities = []
@@ -144,8 +143,8 @@ class TextCopier:
         except Exception as e:
             error_details = str(e)
             if "caption is too long" in error_details.lower():
-                 logger.error(f"Erro ao replicar mídia da mensagem {original.id}: Legenda muito grande para uma conta não-Premium (1024 chars máx). Original tem {len(parsed.text or '')} chars.")
-                 raise Exception(f"Legenda muito grande para uma conta não-Premium (1024 caracteres permitidos). Reduza a legenda ou utilize uma conta Premium.")
+                 logger.error(f"Erro ao replicar mídia da mensagem {original.id}: Legenda muito grande (4096 chars máx). Original tem {len(parsed.text or '')} chars.")
+                 raise Exception(f"Legenda muito grande (4096 caracteres permitidos). Reduza a legenda.")
             else:
                  logger.error("Erro ao replicar mídia da mensagem %d: %s", original.id, e)
                  raise e

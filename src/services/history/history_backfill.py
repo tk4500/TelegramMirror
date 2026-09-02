@@ -43,7 +43,6 @@ class HistoryBackfill:
         speed_profile: SpeedProfile = SpeedProfile.SAFE,
         replacement_rules: list[ReplacementRule] | None = None,
         debug_mode: bool = False,
-        preserve_custom_emojis: bool = False,
     ):
         self._client = client
         self._source_chat_id = source_chat_id
@@ -51,11 +50,10 @@ class HistoryBackfill:
         self._mode = mode
         self._speed = SPEED_DELAYS[speed_profile]
         self._debug_mode = debug_mode
-        self._preserve_custom_emojis = preserve_custom_emojis
 
         # Copiers
         self._forward_copier = ForwardCopier(client)
-        self._text_copier = TextCopier(client, preserve_custom_emojis=self._preserve_custom_emojis)
+        self._text_copier = TextCopier(client)
         self._album_copier = AlbumCopier(client)
         self._pin_service = PinService(client)
         self._entity_parser = EntityParser()
@@ -326,7 +324,7 @@ class HistoryBackfill:
                 # Strip custom emojis directly so Telethon doesn't throw a Premium error
                 # Guardamos o total original para o debug_mode
                 orig_entities_count = len(parsed.entities)
-                parsed.entities = self._entity_parser.clone_entities(parsed.entities, preserve_custom_emojis=self._preserve_custom_emojis)
+                parsed.entities = self._entity_parser.clone_entities(parsed.entities)
                 dropped_emojis = orig_entities_count - len(parsed.entities)
 
                 transformations = {}

@@ -34,14 +34,12 @@ class RealtimeListener:
         mode: CopyMode = CopyMode.FORWARD,
         replacement_rules: list[ReplacementRule] | None = None,
         debug_mode: bool = False,
-        preserve_custom_emojis: bool = False,
     ):
         self._client = client
         self._source_chat_id = source_chat_id
         self._dest_chat_id = dest_chat_id
         self._mode = mode
         self._debug_mode = debug_mode
-        self._preserve_custom_emojis = preserve_custom_emojis
         self._queue: asyncio.Queue[Message] = asyncio.Queue()
         self._is_running = False
         self._worker_task: asyncio.Task | None = None
@@ -49,7 +47,7 @@ class RealtimeListener:
 
         # Inicializa copiers
         self._forward_copier = ForwardCopier(client)
-        self._text_copier = TextCopier(client, preserve_custom_emojis=self._preserve_custom_emojis)
+        self._text_copier = TextCopier(client)
         self._album_copier = AlbumCopier(client)
         self._pin_service = PinService(client)
         self._entity_parser = EntityParser()
@@ -193,7 +191,7 @@ class RealtimeListener:
         elif self._mode == CopyMode.REPLICATE:
             parsed = self._entity_parser.parse_message(message)
             orig_entities_count = len(parsed.entities)
-            cloned_entities = self._entity_parser.clone_entities(parsed.entities, preserve_custom_emojis=self._preserve_custom_emojis)
+            cloned_entities = self._entity_parser.clone_entities(parsed.entities)
             dropped_emojis = orig_entities_count - len(cloned_entities)
             parsed.entities = cloned_entities
 

@@ -70,7 +70,7 @@ class EntityParser:
         )
 
     @staticmethod
-    def clone_entities(entities: list[TypeMessageEntity], preserve_custom_emojis: bool = False) -> list[TypeMessageEntity]:
+    def clone_entities(entities: list[TypeMessageEntity]) -> list[TypeMessageEntity]:
         """
         Clona a lista de entidades para evitar mutação do original.
         Reconstrói cada entidade mantendo todos os atributos.
@@ -102,11 +102,6 @@ class EntityParser:
                     offset=entity.offset, length=entity.length, user_id=entity.user_id
                 ))
             elif isinstance(entity, MessageEntityCustomEmoji):
-                if not preserve_custom_emojis:
-                    # Se for copiar com conta sem Premium, o envio de CustomEmoji pode falhar.
-                    # Removemos a entidade, o texto bruto fallback (normalmente o próprio emoji em texto plano ou a descrição dele)
-                    # se manterá na string original, mas não tentará invocar a renderização customizada proibida.
-                    continue
                 cloned.append(MessageEntityCustomEmoji(
                     offset=entity.offset, length=entity.length, document_id=entity.document_id
                 ))

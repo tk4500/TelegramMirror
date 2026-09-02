@@ -48,3 +48,7 @@ temp_mhtml/*
 docs/*
 dist/TelegramMirror-DEBUG.exe
 dist/TelegramMirror.exe
+TelegramMirror.spec
+.env.embedded
+.gitignore
+logs/

@@ -45,7 +45,6 @@ async def get_speed_profiles():
 class AppSettings(BaseModel):
     panel_username: str | None = None
     panel_password: str | None = None
-    premium_account: bool | None = None
 
 @config_router.get("/app-settings")
 async def get_app_settings(request: Request):
@@ -53,17 +52,10 @@ async def get_app_settings(request: Request):
     rows = await db.fetch_all("SELECT * FROM app_settings")
     settings = {r["key"]: r["value"] for r in rows}
 
-    # Se appConfig premium_account também estiver no .env ou instanciado,
-    # podíamos ler, mas como agora vamos salvar no db como setting, usamos o banco:
-    # Se não existir, consideramos 'false' (ou lido do env)
-    premium_str = settings.get("premium_account", "false").lower()
-    premium = premium_str in ("true", "1", "yes")
-
     return {
         "panel_username": settings.get("panel_username", "admin"),
         # Senha vazia para nao transitar texto puro de volta
         "panel_password": "",
-        "premium_account": premium,
         "debug_mode": getattr(request.app.state, "config", None).debug_mode if hasattr(request.app.state, "config") else False
     }
 
@@ -77,13 +69,5 @@ async def save_app_settings(settings: AppSettings, request: Request):
 
     if settings.panel_password and settings.panel_password.strip():
         await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", ("panel_password", settings.panel_password.strip()))
-
-    if settings.premium_account is not None:
-        await db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", ("premium_account", "true" if settings.premium_account else "false"))
-
-    # Update appConfig reference if available
-    if hasattr(request.app.state, "config"):
-        if settings.premium_account is not None:
-            request.app.state.config.premium_account = settings.premium_account
 
     return {"message": "Configurações salvas"}

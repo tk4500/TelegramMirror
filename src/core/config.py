@@ -35,9 +35,6 @@ class AppConfig(BaseSettings):
     # Flag global de debug detalhado
     debug_mode: bool = False
 
-    # Define se a conta em uso é premium (para preservar emojis customizados)
-    premium_account: bool = False
-
     def ensure_directories(self) -> None:
         """Cria os diretórios necessários da aplicação se não existirem."""
         for directory in [self.data_dir, self.sessions_dir, self.temp_dir]:

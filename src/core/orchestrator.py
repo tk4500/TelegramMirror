@@ -107,13 +107,7 @@ class CopyOrchestrator:
                 start_id = 0 if selective_ids else (cp.last_message_id if scope == CopyScope.CHECKPOINT else 0)
                 self._current_checkpoint_id = cp.id
 
-                # Lê configuração premium
-                settings_rows = await self.db.fetch_all("SELECT * FROM app_settings WHERE key = 'premium_account'")
-                preserve_emojis = False
-                if settings_rows and settings_rows[0]['value'] in ('true', '1', 'yes'):
-                    preserve_emojis = True
-
-                self._current_engine = HistoryBackfill(client, source_chat_id, dest_chat_id, mode, speed_profile, rule_models, debug_mode=debug_mode, preserve_custom_emojis=preserve_emojis)
+                self._current_engine = HistoryBackfill(client, source_chat_id, dest_chat_id, mode, speed_profile, rule_models, debug_mode=debug_mode)
                 self._current_engine.on_progress(self._on_progress)
                 self._current_engine.on_error(self._on_error)
                 self._current_engine.on_message_processed(self._on_message)
@@ -124,12 +118,7 @@ class CopyOrchestrator:
                     await self._current_engine.start(start_from_id=start_id)
 
             else:
-                settings_rows = await self.db.fetch_all("SELECT * FROM app_settings WHERE key = 'premium_account'")
-                preserve_emojis = False
-                if settings_rows and settings_rows[0]['value'] in ('true', '1', 'yes'):
-                    preserve_emojis = True
-
-                self._current_engine = RealtimeListener(client, source_chat_id, dest_chat_id, mode, rule_models, debug_mode=debug_mode, preserve_custom_emojis=preserve_emojis)
+                self._current_engine = RealtimeListener(client, source_chat_id, dest_chat_id, mode, rule_models, debug_mode=debug_mode)
                 self._current_engine.on_error(self._on_error)
                 self._current_engine.on_message_processed(self._on_message)
                 await self._current_engine.start()
