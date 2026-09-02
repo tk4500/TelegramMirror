@@ -625,6 +625,7 @@
                                     placeholder="Deixe em branco para manter"
                                     class="w-full p-3 rounded bg-background text-sm text-white border border-gray-800 focus:outline-none focus:border-primary transition-colors">
                             </div>
+                        </div>
                     </div>
                 </div>
 
@@ -680,8 +681,7 @@
                                     </tr>
                                 </template>
                                 <template x-for="log in serverLogs">
-                                    <tbody x-data="{ expanded: false }" class="divide-y divide-gray-800/50">
-                                        <tr class="hover:bg-gray-800/30 transition-colors">
+                                    <tr x-data="{ expanded: false }" class="hover:bg-gray-800/30 transition-colors">
                                             <td class="py-3 text-gray-400 align-top" x-text="log.time"></td>
                                             <td class="py-3 font-bold align-top" :class="{
                                             'text-green-500': log.level === 'OK' || log.level === 'INFO',
@@ -703,7 +703,6 @@
                                                 </template>
                                             </td>
                                         </tr>
-                                    </tbody>
                                 </template>
                             </tbody>
                         </table>
