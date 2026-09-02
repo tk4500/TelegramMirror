@@ -10,6 +10,7 @@ from telethon.tl.types import Message, InputMediaUploadedPhoto, InputMediaUpload
 from telethon.errors import FloodWaitError
 import asyncio
 import os
+import time
 from src.services.copier.entity_parser import EntityParser
 from src.utils.logger import logger
 
@@ -79,15 +80,31 @@ class AlbumCopier:
         media_files: list[str] = []
         captions: list[str] = []
         caption_entities: list[list] = []
+        total_items = len(album_messages)
+        group_id = album_messages[0].grouped_id
+
+        logger.info("Processando álbum (Grupo ID: %s) com %d itens. Iniciando download das mídias...", group_id, total_items)
 
         try:
             # Baixa todas as mídias do álbum
-            for msg in album_messages:
-                media_path = await self._client.download_media(msg, file="data/temp/")
+            for i, msg in enumerate(album_messages, start=1):
+                logger.info("Baixando arquivo %d/%d do álbum (Mensagem ID: %d)...", i, total_items, msg.id)
+                
+                last_download_log = time.time()
+                async def download_progress(current, total):
+                    nonlocal last_download_log
+                    now = time.time()
+                    if now - last_download_log > 5:
+                        percent = (current / total) * 100 if total else 0
+                        logger.info("Progresso do download do álbum (%d/%d): %.1f%% (%d/%d bytes)", i, total_items, percent, current, total)
+                        last_download_log = now
+
+                media_path = await self._client.download_media(msg, file="data/temp/", progress_callback=download_progress)
                 if media_path is None:
                     logger.warning("Não foi possível baixar mídia do item %d do álbum.", msg.id)
                     media_files.append("")
                 else:
+                    logger.info("Arquivo %d/%d baixado com sucesso.", i, total_items)
                     media_files.append(media_path)
 
                 # Captura legenda e entidades de cada item
@@ -109,6 +126,20 @@ class AlbumCopier:
             caps = [item[1] for item in valid_items]
             ents = [item[2] for item in valid_items]
 
+            logger.info("Todos os %d arquivos do álbum foram baixados. Iniciando o envio para o destino %d...", len(files), dest_chat_id)
+
+            last_upload_log = time.time()
+            async def upload_progress(current, total):
+                nonlocal last_upload_log
+                now = time.time()
+                if now - last_upload_log > 5:
+                    if isinstance(current, float):
+                        logger.info("Progresso do envio do álbum: %.1f / %d arquivos", current, total)
+                    else:
+                        percent = (current / total) * 100 if total else 0
+                        logger.info("Progresso do envio do álbum: %.1f%% (%d/%d bytes)", percent, current, total)
+                    last_upload_log = now
+
             # Envia como álbum — Telethon send_file com lista de arquivos
             # A legenda vai apenas no primeiro item (padrão Telegram)
             # Para preservar legendas individuais, enviamos com caption por item
@@ -118,13 +149,14 @@ class AlbumCopier:
                 caption=caps,
                 formatting_entities=ents[0] if ents else None,
                 parse_mode=None,
+                progress_callback=upload_progress,
             )
 
             if not isinstance(sent_messages, list):
                 sent_messages = [sent_messages]
 
             logger.info(
-                "Álbum com %d itens replicado para %d.",
+                "Álbum replicado com sucesso! %d itens enviados para %d.",
                 len(sent_messages), dest_chat_id,
             )
             return sent_messages
@@ -164,6 +196,10 @@ class AlbumCopier:
         if not album_messages:
             return None
 
+        total_items = len(album_messages)
+        group_id = album_messages[0].grouped_id
+        logger.info("Processando encaminhamento de álbum (Grupo ID: %s) com %d itens. Encaminhando de %d para %d...", group_id, total_items, source_chat_id, dest_chat_id)
+
         try:
             message_ids = [msg.id for msg in album_messages]
             result = await self._client.forward_messages(
@@ -174,8 +210,8 @@ class AlbumCopier:
             if not isinstance(result, list):
                 result = [result]
             logger.info(
-                "Álbum com %d itens encaminhado de %d para %d.",
-                len(result), source_chat_id, dest_chat_id,
+                "Álbum encaminhado com sucesso! %d itens enviados para %d.",
+                len(result), dest_chat_id,
             )
             return result
         except FloodWaitError:

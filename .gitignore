@@ -46,9 +46,9 @@ downloads/
 *.swo
 temp_mhtml/*
 docs/*
-dist/TelegramMirror-DEBUG.exe
-dist/TelegramMirror.exe
+dist/
 TelegramMirror.spec
 .env.embedded
 .gitignore
 logs/
+TelegramMirror-DEBUG.spec
