@@ -13,7 +13,7 @@ async def get_hardware_stats(request: Request):
     ram_percent = ram.percent
     
     disk_monitor = DiskMonitor()
-    disk_free_mb = disk_monitor.get_free_space_mb()
+    disk_free_gb = disk_monitor.get_free_space_gb()
     
     disk = psutil.disk_usage(str(disk_monitor._check_path.absolute()))
     disk_percent = disk.percent
@@ -21,7 +21,7 @@ async def get_hardware_stats(request: Request):
     return {
         "cpu_percent": cpu_percent,
         "ram_percent": ram_percent,
-        "disk_free_mb": disk_free_mb,
+        "disk_free_gb": disk_free_gb,
         "disk_percent": disk_percent,
         "is_disk_critical": disk_monitor.is_space_critical()
     }

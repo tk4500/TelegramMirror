@@ -28,7 +28,8 @@ class TextCopier:
         self,
         dest_chat_id: int,
         message: Message,
-        parsed_override: ParsedMessage | None = None
+        parsed_override: ParsedMessage | None = None,
+        preloader=None
     ) -> Message | None:
         """
         Replica uma mensagem de texto no destino preservando toda a formatação.
@@ -53,7 +54,7 @@ class TextCopier:
                 return await self._send_text(dest_chat_id, parsed)
             else:
                 # Mensagem com mídia — envia com legenda
-                return await self._send_media_with_caption(dest_chat_id, message, parsed)
+                return await self._send_media_with_caption(dest_chat_id, message, parsed, preloader=preloader)
         except MessageTooLongError:
             logger.error("Mensagem %d muito longa para replicar.", message.id)
             return None
@@ -84,19 +85,25 @@ class TextCopier:
         dest_chat_id: int,
         original: Message,
         parsed: ParsedMessage,
+        preloader=None
     ) -> Message | None:
         """
         Envia mídia (foto/vídeo/documento) com legenda e entidades preservadas.
-        Baixa a mídia temporariamente e reenvia preservando a qualidade.
+        Se preloader estiver presente, aguarda e usa o InputFile já feito upload.
         """
         entities = self._parser.clone_entities(parsed.entities)
 
         try:
-            # Baixa a mídia para um arquivo temporário
-            media_path = await self._client.download_media(original, file="data/temp/")
+            if preloader:
+                media_path = await preloader.get_preloaded(original.id)
+                is_preloaded = True
+            else:
+                # Baixa a mídia para um arquivo temporário
+                media_path = await self._client.download_media(original, file="data/temp/")
+                is_preloaded = False
 
             if media_path is None:
-                logger.warning("Não foi possível baixar a mídia da mensagem %d.", original.id)
+                logger.warning("Não foi possível obter a mídia da mensagem %d.", original.id)
                 # Fallback: envia só o texto se houver
                 if parsed.text:
                     return await self._send_text(dest_chat_id, parsed)
@@ -124,12 +131,13 @@ class TextCopier:
             )
             logger.debug("Mídia replicada para %d.", dest_chat_id)
 
-            # Limpa arquivo temporário
-            import os
-            try:
-                os.remove(media_path)
-            except OSError:
-                logger.debug("Não foi possível remover temp: %s", media_path)
+            # Limpa arquivo temporário apenas se não for via preloader
+            if not is_preloaded:
+                import os
+                try:
+                    os.remove(media_path)
+                except OSError:
+                    logger.debug("Não foi possível remover temp: %s", media_path)
 
             if sent and is_split:
                 await self._send_text(dest_chat_id, parsed, reply_to=sent.id)

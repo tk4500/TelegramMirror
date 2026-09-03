@@ -12,6 +12,7 @@ from telethon.errors import FloodWaitError
 from src.services.copier.forward_copier import ForwardCopier
 from src.services.copier.text_copier import TextCopier
 from src.services.copier.album_copier import AlbumCopier
+from src.services.copier.media_preloader import MediaPreloader
 from src.services.copier.pin_service import PinService
 from src.services.transformer.regex_engine import RegexEngine
 from src.services.copier.entity_parser import EntityParser
@@ -24,6 +25,7 @@ SPEED_DELAYS = {
     SpeedProfile.SAFE: {"message": 3.0, "batch_pause": 30.0, "batch_size": 10},
     SpeedProfile.MODERATE: {"message": 1.5, "batch_pause": 15.0, "batch_size": 25},
     SpeedProfile.FAST: {"message": 0.3, "batch_pause": 5.0, "batch_size": 50},
+    SpeedProfile.INSANE: {"message": 0.05, "batch_pause": 1.0, "batch_size": 100},
 }
 
 class HistoryBackfill:
@@ -51,25 +53,19 @@ class HistoryBackfill:
         self._speed = SPEED_DELAYS[speed_profile]
         self._debug_mode = debug_mode
 
-        # Copiers
         self._forward_copier = ForwardCopier(client)
         self._text_copier = TextCopier(client)
         self._album_copier = AlbumCopier(client)
+        self._preloader = MediaPreloader(client)
         self._pin_service = PinService(client)
         self._entity_parser = EntityParser()
         self._regex_engine = RegexEngine(replacement_rules)
 
-        # Estado
         self._is_running = False
         self._is_paused = False
         self._processed_count = 0
         self._failed_count = 0
         self._last_message_id = 0
-
-        # Callbacks
-        self._on_progress = None
-        self._on_message_processed = None
-        self._on_error = None
 
     @property
     @log_execution
@@ -135,13 +131,29 @@ class HistoryBackfill:
         batch_count = 0
         album_buffer: dict[int, list[Message]] = {}
 
-        try:
-            async for message in self._client.iter_messages(
+        # Varredura e pré-carregamento
+        if self._mode == CopyMode.REPLICATE:
+            logger.info("Varrendo mensagens para pré-carregamento de mídias...")
+            await self._preloader.start()
+            # Precisamos percorrer a lista uma vez
+            pre_messages = await self._client.get_messages(
                 self._source_chat_id,
                 min_id=start_from_id,
                 reverse=True,
-                limit=total_limit,
-            ):
+                limit=total_limit
+            )
+            for m in pre_messages:
+                self._preloader.enqueue(m)
+        else:
+            pre_messages = await self._client.get_messages(
+                self._source_chat_id,
+                min_id=start_from_id,
+                reverse=True,
+                limit=total_limit
+            )
+
+        try:
+            for message in pre_messages:
                 if not await self._loop_core(message, album_buffer, batch_count):
                     break
                 batch_count += 1
@@ -158,19 +170,19 @@ class HistoryBackfill:
                     total_limit=total_limit - self._processed_count if total_limit else None,
                 )
         except Exception as e:
-            logger.error("Erro durante backfill: %s", e)
-            if self._on_error:
-                await self._on_error(None, e)
+            logger.error("Erro inesperado no backfill contínuo: %s", e)
+            return {"status": "error", "message": str(e), "processed": self._processed_count}
         finally:
-            self._is_running = False
+            if self._mode == CopyMode.REPLICATE:
+                await self._preloader.stop()
 
+        logger.info("Backfill finalizado. %d mensagens processadas com sucesso.", self._processed_count)
         result = {
             "processed": self._processed_count,
             "failed": self._failed_count,
             "last_message_id": self._last_message_id,
             "status": "completed" if not self._is_paused else "paused",
         }
-        logger.info("Backfill finalizado: %s", result)
         return result
 
     @log_execution
@@ -191,33 +203,44 @@ class HistoryBackfill:
         batch_count = 0
         album_buffer: dict[int, list[Message]] = {}
 
-        # Ordena para garantir que a extração ocorra de baixo para cima (cronológica)
-        message_ids.sort()
+        if self._mode == CopyMode.REPLICATE:
+            logger.info("Varrendo mensagens para pré-carregamento seletivo de mídias...")
+            await self._preloader.start()
+            
+            # Divide os IDs em lotes para evitar erro de requisição muito grande no get_messages
+            messages_to_process = []
+            for i in range(0, len(message_ids), 100):
+                batch_ids = message_ids[i:i+100]
+                batch_msgs = await self._client.get_messages(self._source_chat_id, ids=batch_ids)
+                # get_messages pode retornar None para IDs inválidos
+                valid_msgs = [m for m in batch_msgs if m is not None]
+                for m in valid_msgs:
+                    self._preloader.enqueue(m)
+                messages_to_process.extend(valid_msgs)
+        else:
+            messages_to_process = []
+            for i in range(0, len(message_ids), 100):
+                batch_ids = message_ids[i:i+100]
+                batch_msgs = await self._client.get_messages(self._source_chat_id, ids=batch_ids)
+                valid_msgs = [m for m in batch_msgs if m is not None]
+                messages_to_process.extend(valid_msgs)
 
         try:
-            for chunk in [message_ids[i:i+50] for i in range(0, len(message_ids), 50)]:
-                # Baixa do Telegram as mensagens exatas requisitadas via get_messages
-                messages = await self._client.get_messages(self._source_chat_id, ids=chunk)
-                # get_messages pode retornar None para IDs inválidos, filtre-os
-                messages = [m for m in messages if m is not None]
-
-                for message in messages:
-                    if not await self._loop_core(message, album_buffer, batch_count):
-                        break
-                    batch_count += 1
-
-                if not self._is_running:
+            for message in messages_to_process:
+                if not await self._loop_core(message, album_buffer, batch_count):
                     break
+                batch_count += 1
 
             await self._flush_pending_albums(album_buffer, force_all=True)
 
         except Exception as e:
-            logger.error("Erro durante cópia seletiva: %s", e)
-            if self._on_error:
-                await self._on_error(None, e)
+            logger.error("Erro inesperado no backfill seletivo: %s", e)
+            return {"status": "error", "message": str(e), "processed": self._processed_count}
         finally:
-            self._is_running = False
+            if self._mode == CopyMode.REPLICATE:
+                await self._preloader.stop()
 
+        logger.info("Cópia seletiva finalizada. %d mensagens processadas com sucesso.", self._processed_count)
         return {
             "processed": self._processed_count,
             "failed": self._failed_count,
@@ -343,10 +366,14 @@ class HistoryBackfill:
                     await ws_log(f"Debug [Transformação] Mensagem {message.id}", "INFO", transformations)
 
                 if parsed.has_media:
-                    # Modify text copier logic inline safely via custom method
-                    sent = await self._text_copier.replicate_message(
-                        self._dest_chat_id, message, parsed_override=parsed
-                    )
+                    if self._mode == CopyMode.REPLICATE:
+                        sent = await self._text_copier.replicate_message(
+                            self._dest_chat_id, message, parsed_override=parsed, preloader=self._preloader
+                        )
+                    else:
+                        sent = await self._text_copier.replicate_message(
+                            self._dest_chat_id, message, parsed_override=parsed
+                        )
                 elif parsed.text:
                     sent = await self._client.send_message(
                         entity=self._dest_chat_id,
@@ -410,9 +437,16 @@ class HistoryBackfill:
                         self._source_chat_id, self._dest_chat_id, messages
                     )
                 else:
-                    await self._album_copier.replicate_album(
-                        self._dest_chat_id, messages
-                    )
+                    if self._mode == CopyMode.REPLICATE:
+                        sent_messages = await self._album_copier.replicate_album(
+                            dest_chat_id=self._dest_chat_id,
+                            album_messages=messages,
+                            preloader=self._preloader
+                        )
+                    else:
+                        await self._album_copier.replicate_album(
+                            self._dest_chat_id, messages
+                        )
                 self._processed_count += len(messages)
                 self._last_message_id = messages[-1].id
             except Exception as e:

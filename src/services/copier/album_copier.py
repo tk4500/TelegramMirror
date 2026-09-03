@@ -62,10 +62,11 @@ class AlbumCopier:
         self,
         dest_chat_id: int,
         album_messages: list[Message],
+        preloader=None
     ) -> list[Message] | None:
         """
-        Replica um álbum completo no destino.
-        Baixa todas as mídias, preserva legendas/entidades e reenvia como grupo.
+        Copia um álbum inteiro para o destino (modo Replicar).
+        Se preloader for fornecido, aguarda e obtém os InputFiles pré-carregados.ixa todas as mídias, preserva legendas/entidades e reenvia como grupo.
 
         Args:
             dest_chat_id: ID do chat de destino.
@@ -83,39 +84,48 @@ class AlbumCopier:
         total_items = len(album_messages)
         group_id = album_messages[0].grouped_id
 
-        msg_info = f"Processando álbum (Grupo ID: {group_id}) com {total_items} itens. Iniciando download das mídias..."
+        msg_info = f"Processando álbum (Grupo ID: {group_id}) com {total_items} itens..."
         logger.info(msg_info)
         await ws_log(msg_info, "INFO")
 
         try:
-            # Baixa todas as mídias do álbum
             for i, msg in enumerate(album_messages, start=1):
-                msg_down = f"Baixando arquivo {i}/{total_items} do álbum (Mensagem ID: {msg.id})..."
-                logger.info(msg_down)
-                await ws_log(msg_down, "INFO")
-                
-                last_download_log = time.time()
-                async def download_progress(current, total):
-                    nonlocal last_download_log
-                    now = time.time()
-                    if now - last_download_log > 5:
-                        percent = (current / total) * 100 if total else 0
-                        prog_msg = f"Progresso do download do álbum ({i}/{total_items}): {percent:.1f}% ({current}/{total} bytes)"
-                        logger.info(prog_msg)
-                        await ws_log(prog_msg, "INFO")
-                        last_download_log = now
-
-                media_path = await self._client.download_media(msg, file="data/temp/", progress_callback=download_progress)
-                if media_path is None:
-                    warn_msg = f"Não foi possível baixar mídia do item {msg.id} do álbum."
-                    logger.warning(warn_msg)
-                    await ws_log(warn_msg, "WARN")
-                    media_files.append("")
+                if preloader:
+                    input_file = await preloader.get_preloaded(msg.id)
+                    if input_file is None:
+                        warn_msg = f"Não foi possível obter mídia do preloader para o item {msg.id} do álbum."
+                        logger.warning(warn_msg)
+                        await ws_log(warn_msg, "WARN")
+                        media_files.append("")
+                    else:
+                        media_files.append(input_file)
                 else:
-                    succ_msg = f"Arquivo {i}/{total_items} baixado com sucesso."
-                    logger.info(succ_msg)
-                    await ws_log(succ_msg, "OK")
-                    media_files.append(media_path)
+                    msg_down = f"Baixando arquivo {i}/{total_items} do álbum (Mensagem ID: {msg.id})..."
+                    logger.info(msg_down)
+                    await ws_log(msg_down, "INFO")
+                    
+                    last_download_log = time.time()
+                    async def download_progress(current, total):
+                        nonlocal last_download_log
+                        now = time.time()
+                        if now - last_download_log > 5:
+                            percent = (current / total) * 100 if total else 0
+                            prog_msg = f"Progresso do download do álbum ({i}/{total_items}): {percent:.1f}% ({current}/{total} bytes)"
+                            logger.info(prog_msg)
+                            await ws_log(prog_msg, "INFO")
+                            last_download_log = now
+
+                    media_path = await self._client.download_media(msg, file="data/temp/", progress_callback=download_progress)
+                    if media_path is None:
+                        warn_msg = f"Não foi possível baixar mídia do item {msg.id} do álbum."
+                        logger.warning(warn_msg)
+                        await ws_log(warn_msg, "WARN")
+                        media_files.append("")
+                    else:
+                        succ_msg = f"Arquivo {i}/{total_items} baixado com sucesso."
+                        logger.info(succ_msg)
+                        await ws_log(succ_msg, "OK")
+                        media_files.append(media_path)
 
                 # Captura legenda e entidades de cada item
                 parsed = self._parser.parse_message(msg)
@@ -136,7 +146,7 @@ class AlbumCopier:
             caps = [item[1] for item in valid_items]
             ents = [item[2] for item in valid_items]
 
-            end_down_msg = f"Todos os {len(files)} arquivos do álbum foram baixados. Iniciando o envio para o destino {dest_chat_id}..."
+            end_down_msg = f"Mídias preparadas. Iniciando o envio para o destino {dest_chat_id}..."
             logger.info(end_down_msg)
             await ws_log(end_down_msg, "INFO")
 
@@ -163,7 +173,7 @@ class AlbumCopier:
                 caption=caps,
                 formatting_entities=ents[0] if ents else None,
                 parse_mode=None,
-                progress_callback=upload_progress,
+                progress_callback=upload_progress if not preloader else None,
             )
 
             if not isinstance(sent_messages, list):
@@ -180,13 +190,15 @@ class AlbumCopier:
             logger.error("Erro ao replicar álbum para %d: %s", dest_chat_id, e)
             return None
         finally:
-            # Limpa arquivos temporários
-            for path in media_files:
-                if path:
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        pass
+            # Limpa arquivos temporários apenas se não usamos preloader
+            # (O preloader limpa os próprios arquivos temporários)
+            if not preloader:
+                for mf in media_files:
+                    if mf and os.path.exists(mf):
+                        try:
+                            os.remove(mf)
+                        except OSError:
+                            pass
 
     @log_execution
     async def forward_album(

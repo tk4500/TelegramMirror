@@ -42,6 +42,7 @@ class SpeedProfile(StrEnum):
     SAFE = "safe"
     MODERATE = "moderate"
     FAST = "fast"
+    INSANE = "insane"
 
 class CopySessionStatus(StrEnum):
     """Status de uma sessão de cópia."""

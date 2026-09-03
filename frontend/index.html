@@ -206,7 +206,7 @@
                         <div class="flex items-center gap-1"
                             :class="hwStats.is_critical ? 'text-red-500 animate-pulse' : (hwStats.disk > 80 ? 'text-yellow-500' : '')">
                             <span class="font-bold text-gray-500">Disco Livre</span>
-                            <span x-text="hwStats.disk_free_mb + 'MB'" class="text-gray-300"></span>
+                            <span x-text="hwStats.disk_free_gb + 'GB'" class="text-gray-300"></span>
                         </div>
                     </div>
 
@@ -468,6 +468,7 @@
                                 <option value="safe">Seguro</option>
                                 <option value="moderate">Médio</option>
                                 <option value="fast">Rápido</option>
+                                <option value="insane">Insano</option>
                             </select>
                         </div>
 
