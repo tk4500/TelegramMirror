@@ -8,8 +8,11 @@ from telethon import TelegramClient
 from telethon.tl.types import Message
 from telethon.errors import FloodWaitError, MessageTooLongError
 import asyncio
+import time
+import os
 from src.services.copier.entity_parser import EntityParser, ParsedMessage
 from src.utils.logger import logger
+from src.utils.fast_telethon import download_file, upload_file
 
 class TextCopier:
     """
@@ -95,14 +98,33 @@ class TextCopier:
 
         try:
             if preloader:
-                media_path = await preloader.get_preloaded(original.id)
+                media_file = await preloader.get_preloaded(original.id)
                 is_preloaded = True
             else:
-                # Baixa a mídia para um arquivo temporário
-                media_path = await self._client.download_media(original, file="data/temp/")
+                ext = getattr(original.file, "ext", "")
+                file_name = getattr(original.file, "name", "")
+                if not file_name:
+                    file_name = f"media_{original.id}{ext}"
+                media_path = f"data/temp/{original.id}_{int(time.time())}{ext}"
+                
+                with open(media_path, "wb") as f:
+                    file_size = getattr(original.file, "size", 0)
+                    await download_file(self._client, original.media, f, size=file_size)
+                    
+                if not os.path.exists(media_path) or os.path.getsize(media_path) == 0:
+                    media_file = None
+                else:
+                    with open(media_path, "rb") as f:
+                        media_file = await upload_file(self._client, f)
+                        media_file.name = file_name
+                        
+                    try:
+                        os.remove(media_path)
+                    except Exception:
+                        pass
                 is_preloaded = False
 
-            if media_path is None:
+            if media_file is None:
                 logger.warning("Não foi possível obter a mídia da mensagem %d.", original.id)
                 # Fallback: envia só o texto se houver
                 if parsed.text:
@@ -123,21 +145,13 @@ class TextCopier:
             # Reenvia preservando qualidade
             sent = await self._client.send_file(
                 entity=dest_chat_id,
-                file=media_path,
+                file=media_file,
                 caption=send_caption,
                 formatting_entities=send_entities,
                 parse_mode=None,
                 force_document=self._is_document(original),
             )
             logger.debug("Mídia replicada para %d.", dest_chat_id)
-
-            # Limpa arquivo temporário apenas se não for via preloader
-            if not is_preloaded:
-                import os
-                try:
-                    os.remove(media_path)
-                except OSError:
-                    logger.debug("Não foi possível remover temp: %s", media_path)
 
             if sent and is_split:
                 await self._send_text(dest_chat_id, parsed, reply_to=sent.id)

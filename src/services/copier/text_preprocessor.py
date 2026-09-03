@@ -11,7 +11,7 @@ from src.services.transformer.regex_engine import RegexEngine
 from src.utils.logger import logger
 
 class TextPreprocessor:
-    def __init__(self, parser: EntityParser, regex_engine: RegexEngine, max_workers: int = 10):
+    def __init__(self, parser: EntityParser, regex_engine: RegexEngine, max_workers: int = 30):
         self._parser = parser
         self._regex_engine = regex_engine
         self._queue = asyncio.Queue()
@@ -74,14 +74,8 @@ class TextPreprocessor:
         """
         parsed = self._parser.parse_message(message)
         
-        orig_entities_count = len(parsed.entities)
-        cloned_entities = self._parser.clone_entities(parsed.entities)
-        dropped_emojis = orig_entities_count - len(cloned_entities)
-        parsed.entities = cloned_entities
-
+        parsed.entities = self._parser.clone_entities(parsed.entities)
         transformations = {}
-        if dropped_emojis > 0:
-            transformations["dropped_custom_emojis"] = dropped_emojis
 
         # Aplica substituições se configuradas
         if self._regex_engine and self._regex_engine._rules:

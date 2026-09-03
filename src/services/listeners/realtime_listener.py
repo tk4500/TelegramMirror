@@ -7,10 +7,15 @@ para o destino usando uma fila de processamento assíncrona.
 from src.utils.logger import log_execution
 import asyncio
 from telethon import TelegramClient, events
-from telethon.tl.types import Message
+from telethon.tl.types import Message, PeerChannel, PeerUser, PeerChat
+from telethon.errors import MessageIdInvalidError
+
+from src.core.config import CopyMode
+from src.db.models import ReplacementRule
 from src.services.copier.forward_copier import ForwardCopier
 from src.services.copier.text_copier import TextCopier
 from src.services.copier.album_copier import AlbumCopier
+from src.services.copier.text_preprocessor import TextPreprocessor
 from src.services.copier.pin_service import PinService
 from src.services.transformer.regex_engine import RegexEngine
 from src.services.copier.entity_parser import EntityParser
@@ -52,8 +57,9 @@ class RealtimeListener:
         self._pin_service = PinService(client)
         self._entity_parser = EntityParser()
 
-        # Regex engine
+        # Regex engine e Preprocessor
         self._regex_engine = RegexEngine(replacement_rules)
+        self._text_preprocessor = TextPreprocessor(self._entity_parser, self._regex_engine)
 
         # Buffer para álbuns (agrupa por grouped_id)
         self._album_buffer: dict[int, list[Message]] = {}
@@ -189,41 +195,28 @@ class RealtimeListener:
                 self._source_chat_id, self._dest_chat_id, message.id
             )
         elif self._mode == CopyMode.REPLICATE:
-            parsed = self._entity_parser.parse_message(message)
-            orig_entities_count = len(parsed.entities)
-            cloned_entities = self._entity_parser.clone_entities(parsed.entities)
-            dropped_emojis = orig_entities_count - len(cloned_entities)
-            parsed.entities = cloned_entities
+            parsed, transformations = self._text_preprocessor._process_text(message)
 
-            transformations = {}
-            if dropped_emojis > 0:
-                transformations["dropped_custom_emojis"] = dropped_emojis
+            if self._debug_mode and transformations:
+                try:
+                    await ws_log(f"Debug [Transformação] Mensagem {message.id}", "INFO", transformations)
+                except Exception:
+                    pass
 
-            # Aplica substituições se configuradas
-            if self._regex_engine._rules:
-                orig_text = parsed.text
-                parsed.text, parsed.entities = self._regex_engine.apply(
-                    parsed.text, parsed.entities
+            # Copia com base no tipo de mídia
+            if parsed.has_media:
+                # IMPORTANTE: Em Realtime, não temos o preloader rodando, 
+                # então ele baixará na hora (utilizando as otimizações FastTelethon que implementaremos no copier)
+                sent_message = await self._text_copier.replicate_message(
+                    self._dest_chat_id, message, parsed_override=parsed, preloader=None
                 )
-                if orig_text != parsed.text:
-                    transformations["regex_text_changed"] = {"from": orig_text, "to": parsed.text}
-
-                if self._debug_mode and transformations:
-                    await ws_log(f"Debug [Transformação Realtime] Mensagem {message.id}", "INFO", transformations)
-
-                # Envia com texto/entidades modificados
+            elif parsed.text:
                 sent_message = await self._client.send_message(
                     entity=self._dest_chat_id,
                     message=parsed.text,
                     formatting_entities=parsed.entities,
                     parse_mode=None,
                     link_preview=False,
-                )
-            else:
-                if self._debug_mode and transformations:
-                    await ws_log(f"Debug [Transformação Realtime] Mensagem {message.id}", "INFO", transformations)
-                sent_message = await self._text_copier.replicate_message(
-                    self._dest_chat_id, message, parsed_override=parsed
                 )
 
         # Sincroniza pin se necessário

@@ -16,7 +16,7 @@ from src.utils.disk_monitor import DiskMonitor
 from src.utils.fast_telethon import download_file, upload_file
 
 class MediaPreloader:
-    def __init__(self, client: TelegramClient, max_workers: int = 5):
+    def __init__(self, client: TelegramClient, max_workers: int = 10):
         self._client = client
         self._queue = asyncio.Queue()
         self._results = {}
@@ -133,7 +133,8 @@ class MediaPreloader:
             media_path = f"data/temp/{msg.id}_{int(time.time())}{ext}"
             
             with open(media_path, "wb") as f:
-                await download_file(self._client, msg.media, f, progress_callback=progress_dl)
+                file_size = getattr(msg.file, "size", 0)
+                await download_file(self._client, msg.media, f, progress_callback=progress_dl, size=file_size)
             
             if not os.path.exists(media_path) or os.path.getsize(media_path) == 0:
                 self._results[msg.id] = None

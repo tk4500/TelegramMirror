@@ -12,8 +12,9 @@ import asyncio
 import os
 import time
 from src.services.copier.entity_parser import EntityParser
-from src.utils.logger import logger, ws_log
-from src.utils.fast_telethon import download_file
+from src.utils.logger import log_execution, logger
+from src.utils.ws_logger import ws_log
+from src.utils.fast_telethon import download_file, upload_file
 
 class AlbumCopier:
     """
@@ -64,7 +65,8 @@ class AlbumCopier:
         dest_chat_id: int,
         album_messages: list[Message],
         preloader=None,
-        text_preprocessor=None
+        text_preprocessor=None,
+        sync_preprocess: bool = False,
     ) -> list[Message] | None:
         """
         Copia um álbum inteiro para o destino (modo Replicar).
@@ -124,7 +126,8 @@ class AlbumCopier:
                     media_path = f"data/temp/{msg.id}_{int(time.time())}{ext}"
                     
                     with open(media_path, "wb") as f:
-                        await download_file(self._client, msg.media, f, progress_callback=download_progress)
+                        file_size = getattr(msg.file, "size", 0)
+                        await download_file(self._client, msg.media, f, progress_callback=download_progress, size=file_size)
                         
                     if not os.path.exists(media_path) or os.path.getsize(media_path) == 0:
                         warn_msg = f"Não foi possível baixar mídia do item {msg.id} do álbum."
@@ -132,14 +135,37 @@ class AlbumCopier:
                         await ws_log(warn_msg, "WARN")
                         media_files.append("")
                     else:
-                        succ_msg = f"Arquivo {i}/{total_items} baixado com sucesso."
+                        succ_msg = f"Arquivo {i}/{total_items} baixado com sucesso. Iniciando upload..."
                         logger.info(succ_msg)
                         await ws_log(succ_msg, "OK")
-                        media_files.append(media_path)
+                        
+                        last_upload_log = time.time()
+                        async def upload_progress(current, total):
+                            nonlocal last_upload_log
+                            now = time.time()
+                            if now - last_upload_log > 5:
+                                percent = (current / total) * 100 if total else 0
+                                prog_msg = f"Upload Álbum: {percent:.1f}% ({current}/{total})"
+                                logger.info(prog_msg)
+                                await ws_log(prog_msg, "INFO")
+                                last_upload_log = now
+                        
+                        with open(media_path, "rb") as f:
+                            input_file = await upload_file(self._client, f, progress_callback=upload_progress)
+                            input_file.name = file_name
+                            media_files.append(input_file)
+                            
+                        try:
+                            os.remove(media_path)
+                        except Exception:
+                            pass
 
                 # Captura legenda e entidades de cada item
                 if text_preprocessor:
-                    parsed, _ = await text_preprocessor.get_prepared(msg.id)
+                    if sync_preprocess:
+                        parsed, _ = text_preprocessor._process_text(msg)
+                    else:
+                        parsed, _ = await text_preprocessor.get_prepared(msg.id)
                 else:
                     parsed = self._parser.parse_message(msg)
                     
