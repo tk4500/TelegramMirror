@@ -27,7 +27,7 @@ class SysMonitor:
                 stats = {
                     "cpu": psutil.cpu_percent(interval=None),
                     "ram": psutil.virtual_memory().percent,
-                    "disk_free_mb": round(self.disk_monitor.get_free_space_mb(), 2),
+                    "disk_free_gb": round(self.disk_monitor.get_free_space_gb(), 2),
                     "disk": psutil.disk_usage(str(self.disk_monitor._check_path.absolute())).percent,
                     "is_critical": self.disk_monitor.is_space_critical()
                 }
