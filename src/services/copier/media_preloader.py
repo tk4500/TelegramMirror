@@ -13,6 +13,7 @@ from telethon.tl.types import Message
 from telethon.errors import FloodWaitError
 from src.utils.logger import logger, ws_log
 from src.utils.disk_monitor import DiskMonitor
+from src.utils.fast_telethon import download_file, upload_file
 
 class MediaPreloader:
     def __init__(self, client: TelegramClient, max_workers: int = 5):
@@ -125,15 +126,22 @@ class MediaPreloader:
                     await ws_log(prog, "INFO")
                     last_log = now
                     
-            media_path = await self._client.download_media(msg, file="data/temp/", progress_callback=progress_dl)
-            if not media_path:
+            ext = getattr(msg.file, "ext", "")
+            file_name = getattr(msg.file, "name", "")
+            if not file_name:
+                file_name = f"media_{msg.id}{ext}"
+            media_path = f"data/temp/{msg.id}_{int(time.time())}{ext}"
+            
+            with open(media_path, "wb") as f:
+                await download_file(self._client, msg.media, f, progress_callback=progress_dl)
+            
+            if not os.path.exists(media_path) or os.path.getsize(media_path) == 0:
                 self._results[msg.id] = None
                 if msg.id in self._events:
                     self._events[msg.id].set()
                 return
                 
             # Upload
-            file_name = os.path.basename(media_path)
             last_log = time.time()
             async def progress_ul(current, total):
                 nonlocal last_log
@@ -145,7 +153,9 @@ class MediaPreloader:
                     await ws_log(prog, "INFO")
                     last_log = now
                     
-            input_file = await self._client.upload_file(media_path, file_name=file_name, progress_callback=progress_ul)
+            with open(media_path, "rb") as f:
+                input_file = await upload_file(self._client, f, progress_callback=progress_ul)
+                input_file.name = file_name
             
             # Limpeza local
             try:

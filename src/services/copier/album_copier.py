@@ -6,13 +6,14 @@ preservando ordem, legendas e entidades de formatação.
 
 from src.utils.logger import log_execution
 from telethon import TelegramClient
-from telethon.tl.types import Message, InputMediaUploadedPhoto, InputMediaUploadedDocument
+from telethon.tl.types import Message, InputFile
 from telethon.errors import FloodWaitError
 import asyncio
 import os
 import time
 from src.services.copier.entity_parser import EntityParser
 from src.utils.logger import logger, ws_log
+from src.utils.fast_telethon import download_file
 
 class AlbumCopier:
     """
@@ -116,8 +117,16 @@ class AlbumCopier:
                             await ws_log(prog_msg, "INFO")
                             last_download_log = now
 
-                    media_path = await self._client.download_media(msg, file="data/temp/", progress_callback=download_progress)
-                    if media_path is None:
+                    ext = getattr(msg.file, "ext", "")
+                    file_name = getattr(msg.file, "name", "")
+                    if not file_name:
+                        file_name = f"media_{msg.id}{ext}"
+                    media_path = f"data/temp/{msg.id}_{int(time.time())}{ext}"
+                    
+                    with open(media_path, "wb") as f:
+                        await download_file(self._client, msg.media, f, progress_callback=download_progress)
+                        
+                    if not os.path.exists(media_path) or os.path.getsize(media_path) == 0:
                         warn_msg = f"Não foi possível baixar mídia do item {msg.id} do álbum."
                         logger.warning(warn_msg)
                         await ws_log(warn_msg, "WARN")
