@@ -62,7 +62,8 @@ class AlbumCopier:
         self,
         dest_chat_id: int,
         album_messages: list[Message],
-        preloader=None
+        preloader=None,
+        text_preprocessor=None
     ) -> list[Message] | None:
         """
         Copia um álbum inteiro para o destino (modo Replicar).
@@ -128,9 +129,13 @@ class AlbumCopier:
                         media_files.append(media_path)
 
                 # Captura legenda e entidades de cada item
-                parsed = self._parser.parse_message(msg)
-                captions.append(parsed.text)
-                caption_entities.append(self._parser.clone_entities(parsed.entities))
+                if text_preprocessor:
+                    parsed, _ = await text_preprocessor.get_prepared(msg.id)
+                else:
+                    parsed = self._parser.parse_message(msg)
+                    
+                captions.append(parsed.text if parsed else "")
+                caption_entities.append(parsed.entities if parsed else [])
 
             # Filtra itens sem mídia
             valid_items = [

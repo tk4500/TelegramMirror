@@ -15,7 +15,7 @@ from src.utils.logger import logger, ws_log
 from src.utils.disk_monitor import DiskMonitor
 
 class MediaPreloader:
-    def __init__(self, client: TelegramClient, max_workers: int = 40):
+    def __init__(self, client: TelegramClient, max_workers: int = 5):
         self._client = client
         self._queue = asyncio.Queue()
         self._results = {}

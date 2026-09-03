@@ -13,6 +13,7 @@ from src.services.copier.forward_copier import ForwardCopier
 from src.services.copier.text_copier import TextCopier
 from src.services.copier.album_copier import AlbumCopier
 from src.services.copier.media_preloader import MediaPreloader
+from src.services.copier.text_preprocessor import TextPreprocessor
 from src.services.copier.pin_service import PinService
 from src.services.transformer.regex_engine import RegexEngine
 from src.services.copier.entity_parser import EntityParser
@@ -57,9 +58,10 @@ class HistoryBackfill:
         self._text_copier = TextCopier(client)
         self._album_copier = AlbumCopier(client)
         self._preloader = MediaPreloader(client)
-        self._pin_service = PinService(client)
         self._entity_parser = EntityParser()
         self._regex_engine = RegexEngine(replacement_rules)
+        self._text_preprocessor = TextPreprocessor(self._entity_parser, self._regex_engine)
+        self._pin_service = PinService(client)
 
         self._is_running = False
         self._is_paused = False
@@ -133,8 +135,10 @@ class HistoryBackfill:
 
         # Varredura e pré-carregamento
         if self._mode == CopyMode.REPLICATE:
-            logger.info("Varrendo mensagens para pré-carregamento de mídias...")
+            logger.info("Varrendo mensagens para iniciar pré-processamento duplo (Texto + Mídia)...")
             await self._preloader.start()
+            await self._text_preprocessor.start()
+            
             # Precisamos percorrer a lista uma vez
             pre_messages = await self._client.get_messages(
                 self._source_chat_id,
@@ -143,6 +147,7 @@ class HistoryBackfill:
                 limit=total_limit
             )
             for m in pre_messages:
+                self._text_preprocessor.enqueue(m)
                 self._preloader.enqueue(m)
         else:
             pre_messages = await self._client.get_messages(
@@ -175,6 +180,7 @@ class HistoryBackfill:
         finally:
             if self._mode == CopyMode.REPLICATE:
                 await self._preloader.stop()
+                await self._text_preprocessor.stop()
 
         logger.info("Backfill finalizado. %d mensagens processadas com sucesso.", self._processed_count)
         result = {
@@ -204,8 +210,9 @@ class HistoryBackfill:
         album_buffer: dict[int, list[Message]] = {}
 
         if self._mode == CopyMode.REPLICATE:
-            logger.info("Varrendo mensagens para pré-carregamento seletivo de mídias...")
+            logger.info("Varrendo mensagens para iniciar pré-processamento seletivo duplo (Texto + Mídia)...")
             await self._preloader.start()
+            await self._text_preprocessor.start()
             
             # Divide os IDs em lotes para evitar erro de requisição muito grande no get_messages
             messages_to_process = []
@@ -215,6 +222,7 @@ class HistoryBackfill:
                 # get_messages pode retornar None para IDs inválidos
                 valid_msgs = [m for m in batch_msgs if m is not None]
                 for m in valid_msgs:
+                    self._text_preprocessor.enqueue(m)
                     self._preloader.enqueue(m)
                 messages_to_process.extend(valid_msgs)
         else:
@@ -239,6 +247,7 @@ class HistoryBackfill:
         finally:
             if self._mode == CopyMode.REPLICATE:
                 await self._preloader.stop()
+                await self._text_preprocessor.stop()
 
         logger.info("Cópia seletiva finalizada. %d mensagens processadas com sucesso.", self._processed_count)
         return {
@@ -342,25 +351,13 @@ class HistoryBackfill:
                     self._source_chat_id, self._dest_chat_id, message.id
                 )
             elif self._mode == CopyMode.REPLICATE:
-                parsed = self._entity_parser.parse_message(message)
-
-                # Strip custom emojis directly so Telethon doesn't throw a Premium error
-                # Guardamos o total original para o debug_mode
-                orig_entities_count = len(parsed.entities)
-                parsed.entities = self._entity_parser.clone_entities(parsed.entities)
-                dropped_emojis = orig_entities_count - len(parsed.entities)
-
-                transformations = {}
-                if dropped_emojis > 0:
-                    transformations["dropped_custom_emojis"] = dropped_emojis
-
-                if self._regex_engine._rules:
-                    orig_text = parsed.text
-                    parsed.text, parsed.entities = self._regex_engine.apply(
-                        parsed.text, parsed.entities
-                    )
-                    if orig_text != parsed.text:
-                        transformations["regex_text_changed"] = {"from": orig_text, "to": parsed.text}
+                # Aguarda o pré-processador preparar a mensagem (parsing e regex)
+                parsed, transformations = await self._text_preprocessor.get_prepared(message.id)
+                
+                if parsed is None:
+                    # Se falhou no preprocessor, tenta modo de falha fallback
+                    logger.warning(f"Mensagem {message.id} falhou no preprocessor, tentando ignorar.")
+                    return False
 
                 if self._debug_mode and transformations:
                     await ws_log(f"Debug [Transformação] Mensagem {message.id}", "INFO", transformations)
@@ -441,7 +438,8 @@ class HistoryBackfill:
                         sent_messages = await self._album_copier.replicate_album(
                             dest_chat_id=self._dest_chat_id,
                             album_messages=messages,
-                            preloader=self._preloader
+                            preloader=self._preloader,
+                            text_preprocessor=self._text_preprocessor
                         )
                     else:
                         await self._album_copier.replicate_album(
