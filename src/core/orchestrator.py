@@ -80,7 +80,7 @@ class CopyOrchestrator:
             await repo.create(fail)
 
     @log_execution
-    async def start_routine(self, source_chat_id: int, dest_chat_id: int, mode: CopyMode, scope: CopyScope, speed_profile: SpeedProfile, selective_ids: list[int] = None, debug_mode: bool = False):
+    async def start_routine(self, source_chat_id: int, dest_chat_id: int, mode: CopyMode, scope: CopyScope, speed_profile: SpeedProfile, selective_ids: list[int] = None, debug_mode: bool = False, download_only: bool = False):
         if self._is_running:
             return
 
@@ -107,7 +107,7 @@ class CopyOrchestrator:
                 start_id = 0 if selective_ids else (cp.last_message_id if scope == CopyScope.CHECKPOINT else 0)
                 self._current_checkpoint_id = cp.id
 
-                self._current_engine = HistoryBackfill(client, source_chat_id, dest_chat_id, mode, speed_profile, rule_models, debug_mode=debug_mode)
+                self._current_engine = HistoryBackfill(client, source_chat_id, dest_chat_id, mode, speed_profile, rule_models, debug_mode=debug_mode, download_only=download_only)
                 self._current_engine.on_progress(self._on_progress)
                 self._current_engine.on_error(self._on_error)
                 self._current_engine.on_message_processed(self._on_message)
