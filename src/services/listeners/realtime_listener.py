@@ -10,8 +10,7 @@ from telethon import TelegramClient, events
 from telethon.tl.types import Message, PeerChannel, PeerUser, PeerChat
 from telethon.errors import MessageIdInvalidError
 
-from src.core.config import CopyMode
-from src.db.models import ReplacementRule
+from src.db.models import ReplacementRule, CopyMode
 from src.services.copier.forward_copier import ForwardCopier
 from src.services.copier.text_copier import TextCopier
 from src.services.copier.album_copier import AlbumCopier

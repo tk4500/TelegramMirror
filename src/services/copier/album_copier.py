@@ -12,8 +12,7 @@ import asyncio
 import os
 import time
 from src.services.copier.entity_parser import EntityParser
-from src.utils.logger import log_execution, logger
-from src.utils.ws_logger import ws_log
+from src.utils.logger import log_execution, logger, ws_log
 from src.utils.fast_telethon import download_file, upload_file
 
 class AlbumCopier:
