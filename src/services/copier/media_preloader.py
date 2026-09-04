@@ -77,12 +77,17 @@ class MediaPreloader:
                 ram = psutil.virtual_memory().percent
                 is_disk_critical = self._disk_monitor.is_space_critical()
                 
-                if cpu > 95 or ram > 90 or is_disk_critical:
-                    # Reduz workers se sobrecarregado
-                    self._active_workers = max(1, self._active_workers - 1)
-                elif cpu < 60 and ram < 80 and not is_disk_critical:
-                    # Aumenta workers se folgado
-                    self._active_workers = min(self._max_workers, self._active_workers + 1)
+                if is_disk_critical:
+                    # Sempre reduz se o disco lotar
+                    self._active_workers = max(1, self._active_workers - 2)
+                else:
+                    if cpu > 95 or ram > 90:
+                        # Reduz workers se sobrecarregado
+                        self._active_workers = max(1, self._active_workers - 1)
+                    elif cpu < 75 and ram < 85:
+                        # Aumenta workers se folgado (se download_only, sobe mais rapido)
+                        step = 5 if self._download_only else 1
+                        self._active_workers = min(self._max_workers, self._active_workers + step)
                 
                 await asyncio.sleep(2)
             except Exception as e:
@@ -201,10 +206,12 @@ class MediaPreloader:
             
         except FloodWaitError as e:
             logger.warning("Preloader FloodWait (%ds) na msg %d", e.seconds, msg.id)
+            self._active_workers = max(2, self._active_workers - 10) # Penaliza forte no floodwait
             await asyncio.sleep(e.seconds)
             await self._process_message(msg) # tenta de novo
         except Exception as e:
             logger.error("Preloader falhou na msg %d: %s", msg.id, e)
+            self._active_workers = max(2, self._active_workers - 5) # Penaliza em erro de conexão
             self._results[msg.id] = None
         finally:
             if msg.id in self._events:
