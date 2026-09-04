@@ -92,6 +92,17 @@ class AlbumCopier:
         await ws_log(msg_info, "INFO")
 
         try:
+            # Refaz o fetch das mensagens para renovar o file_reference (evita erro de expiração)
+            try:
+                chat_id = album_messages[0].chat_id
+                if chat_id:
+                    msg_ids = [m.id for m in album_messages]
+                    fresh_msgs = await self._client.get_messages(chat_id, ids=msg_ids)
+                    if fresh_msgs:
+                        album_messages = [m for m in fresh_msgs if m is not None]
+            except Exception as e:
+                logger.warning("Não foi possível refazer o fetch do álbum %s: %s", group_id, e)
+
             for i, msg in enumerate(album_messages, start=1):
                 if preloader:
                     input_file = await preloader.get_preloaded(msg.id)

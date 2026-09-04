@@ -45,6 +45,15 @@ class TextCopier:
         Returns:
             Mensagem enviada ou None se falhou.
         """
+        # Refaz o fetch da mensagem para renovar o file_reference (evita erro de expiração)
+        try:
+            if message.chat_id:
+                fresh_msg = await self._client.get_messages(message.chat_id, ids=message.id)
+                if fresh_msg:
+                    message = fresh_msg
+        except Exception as e:
+            logger.warning("Não foi possível refazer o fetch da msg %d no copier: %s", message.id, e)
+
         parsed = parsed_override if parsed_override else self._parser.parse_message(message)
 
         if not parsed.text and not parsed.has_media:

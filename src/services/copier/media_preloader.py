@@ -110,6 +110,15 @@ class MediaPreloader:
                 
     async def _process_message(self, msg: Message):
         try:
+            # Refaz o fetch da mensagem para renovar o file_reference (evita erro de expiração)
+            try:
+                if msg.chat_id:
+                    fresh_msg = await self._client.get_messages(msg.chat_id, ids=msg.id)
+                    if fresh_msg and getattr(fresh_msg, 'media', None):
+                        msg = fresh_msg
+            except Exception as e:
+                logger.warning("Não foi possível refazer o fetch da msg %d no preloader: %s", msg.id, e)
+
             msg_info = f"Preloader: Iniciando download/upload da msg ID {msg.id}"
             logger.info(msg_info)
             await ws_log(msg_info, "INFO")
