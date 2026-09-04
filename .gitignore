@@ -52,3 +52,4 @@ TelegramMirror.spec
 .gitignore
 logs/
 TelegramMirror-DEBUG.spec
+data.zip

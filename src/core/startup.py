@@ -90,14 +90,14 @@ class StartupManager:
         # mesmo que elas estejam vazias e desconectadas inicialmente
         if not await repo.get_by_id(1):
             acc1 = Account(
-                id=1, phone="", api_id=0, api_hash="",
+                id=1, phone="unconfigured_1", api_id=0, api_hash="",
                 is_primary=True, status=AccountStatus.DISCONNECTED
             )
             await repo.create(acc1)
 
         if not await repo.get_by_id(2):
             acc2 = Account(
-                id=2, phone="", api_id=0, api_hash="",
+                id=2, phone="unconfigured_2", api_id=0, api_hash="",
                 is_primary=False, status=AccountStatus.DISCONNECTED
             )
             await repo.create(acc2)
