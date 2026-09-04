@@ -297,10 +297,11 @@ class HistoryBackfill:
         self._last_message_id = message.id
 
         # Delay anti-flood
-        await asyncio.sleep(self._speed["message"])
+        if not self._download_only:
+            await asyncio.sleep(self._speed["message"])
 
         # Pausa entre lotes
-        if batch_count > 0 and batch_count % self._speed["batch_size"] == 0:
+        if not self._download_only and batch_count > 0 and batch_count % self._speed["batch_size"] == 0:
             logger.debug("Pausa de lote: %.1fs", self._speed["batch_pause"])
             await asyncio.sleep(self._speed["batch_pause"])
 
