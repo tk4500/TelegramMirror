@@ -15,6 +15,7 @@ class StartRequest(BaseModel):
     speed_profile: str = "safe"
     selective_ids: list[int] = []
     debug_mode: bool = False
+    download_only: bool = False
 
 @flow_router.post("/start")
 async def start_flow(payload: StartRequest, request: Request):
@@ -34,7 +35,8 @@ async def start_flow(payload: StartRequest, request: Request):
             dest_chat_id=payload.dest_chat_id,
             mode=mode, scope=scope, speed_profile=speed,
             selective_ids=payload.selective_ids,
-            debug_mode=payload.debug_mode
+            debug_mode=payload.debug_mode,
+            download_only=payload.download_only
         )
     )
     return {"message": "Rotina iniciada", "status": "started"}
