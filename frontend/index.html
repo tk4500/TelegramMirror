@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/api/assets/icon.ico" onerror="this.href='data:image/x-icon;base64,'">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans/style.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-mono/style.css" rel="stylesheet">
     <title>CloneX - Painel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -15,8 +16,8 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        sans: ['Geist', 'system-ui', 'sans-serif'],
+                        mono: ['Geist Mono', 'monospace'],
                     },
                     colors: {
                         primary: '#5e6ad2',
@@ -40,13 +41,62 @@
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js"></script>
     <style>
 
+        
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            font-feature-settings: "cv01", "ss03";
-            background-color: #08090a;
+            font-family: 'Geist', system-ui, sans-serif;
+            background-color: #050505;
+            background-image: radial-gradient(ellipse at 50% -20%, rgba(94, 106, 210, 0.15), transparent 60%);
             color: #f7f8f8;
             -webkit-font-smoothing: antialiased;
         }
+        
+        .premium-transition {
+            transition: all 0.7s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        
+        .ethereal-shell {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px;
+            border-radius: 2rem;
+            backdrop-filter: blur(24px);
+        }
+        
+        .ethereal-core {
+            background: rgba(10, 10, 10, 0.8);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+            border-radius: calc(2rem - 6px);
+        }
+        
+        .btn-island {
+            border-radius: 9999px;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+            transform: scale(1);
+        }
+        .btn-island:active {
+            transform: scale(0.97);
+        }
+        .icon-circle {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        .group:hover .icon-circle {
+            transform: translateX(2px) translateY(-1px) scale(1.05);
+        }
+
 
         [x-cloak] { display: none !important; }
 
@@ -66,9 +116,7 @@
             border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
         }
 
-        .bg-background {
-            background-color: #08090a !important;
-        }
+        
 
     </style>
 </head>
@@ -81,349 +129,336 @@
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar (Somente quando autenticado) -->
         <aside x-show="isAuthenticated" :class="mobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
-            class="w-64 bg-sidebar flex flex-col justify-between shrink-0 absolute md:relative z-20 h-full transition-transform duration-200"
+            class="w-64 bg-white/5 backdrop-blur-2xl border-r border-white/10 flex flex-col justify-between shrink-0 absolute md:relative z-40 h-full transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
             x-cloak>
             <div>
                 <!-- Logo na Sidebar -->
-                <div class="h-16 flex items-center gap-3 px-6 bg-card border-b border-borderStd">
+                <div class="h-20 flex items-center gap-4 px-8 border-b border-white/5">
                     <img src="/api/assets/logo-clonex.png" onerror="this.style.opacity='0'"
                         class="h-8 w-auto object-contain rounded" alt="Logo">
-                    <span class="text-textMain font-bold text-xl tracking-wide hidden sm:inline">Clone<span
-                            class="text-[#7170ff]">X</span></span>
+                    <span class="text-white font-medium tracking-tight text-xl">Clone<span
+                            class="text-primary">X</span></span>
                 </div>
 
                 <!-- Links de Navegação Sidebar -->
-                <nav class="p-4 space-y-2 text-sm font-bold text-textMuted">
-                    <button @click="currentTab = 'dashboard'"
-                        :class="currentTab === 'dashboard' ? 'bg-primary/10 text-[#7170ff]' : 'hover:bg-bgSurfaceHover hover:text-textMain'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
-                            </path>
-                        </svg>
-                        Dashboard
-                    </button>
-                    <button @click="currentTab = 'clonagem'"
-                        :class="currentTab === 'clonagem' ? 'bg-primary/10 text-[#7170ff]' : 'hover:bg-bgSurfaceHover hover:text-textMain'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
-                        Clonagem
-                    </button>
-                    <button @click="currentTab = 'contas'"
-                        :class="currentTab === 'contas' ? 'bg-primary/10 text-[#7170ff]' : 'hover:bg-bgSurfaceHover hover:text-textMain'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                            </path>
-                        </svg>
-                        Contas
-                    </button>
-                    <button @click="currentTab = 'logs'"
-                        :class="currentTab === 'logs' ? 'bg-primary/10 text-[#7170ff]' : 'hover:bg-bgSurfaceHover hover:text-textMain'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                        Monitoramento
-                    </button>
-                    <button @click="currentTab = 'settings'"
-                        :class="currentTab === 'settings' ? 'bg-primary/10 text-[#7170ff]' : 'hover:bg-bgSurfaceHover hover:text-textMain'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded transition-colors text-left">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                            </path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        Configurações
-                    </button>
+                <nav class="p-6 space-y-2">
+                    <template x-for="item in [
+                        { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+                        { id: 'clonagem', label: 'Clonagem', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
+                        { id: 'contas', label: 'Contas', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+                        { id: 'logs', label: 'Monitor', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                        { id: 'settings', label: 'Configurações', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' }
+                    ]">
+                        <button @click="currentTab = item.id"
+                            :class="currentTab === item.id ? 'bg-primary text-white shadow-[0_0_20px_rgba(94,106,210,0.4)]' : 'hover:bg-white/10 text-textMuted hover:text-white'"
+                            class="w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] text-left font-medium text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="item.icon"></path>
+                            </svg>
+                            <span x-text="item.label"></span>
+                        </button>
+                    </template>
                 </nav>
             </div>
 
-            <div class="p-4 border-t border-borderStd text-center">
-                <button @click="logout()" class="text-sm font-bold text-red-500 hover:text-red-400">Sair da
-                    Conta</button>
+            <div class="p-6 border-t border-white/5">
+                <button @click="logout()" class="group w-full flex items-center justify-between px-4 py-3 rounded-2xl hover:bg-red-500/10 text-textMuted hover:text-red-400 transition-all duration-500 font-medium text-sm">
+                    <span>Sair da Sessão</span>
+                    <div class="w-8 h-8 rounded-full bg-white/5 group-hover:bg-red-500/20 flex items-center justify-center transition-all duration-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </div>
+                </button>
             </div>
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col h-full overflow-hidden bg-background relative">
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative">
 
             <!-- Navbar Superior (Topo) -->
-            <header
-                class="bg-card shadow-sm border-b border-borderStd h-16 flex items-center justify-between px-6 shrink-0 transition-colors duration-200">
-                <div class="flex items-center gap-4">
-                    <button aria-label="Toggle mobile menu" class="md:hidden text-textMuted hover:text-textMain" @click="mobileMenu = !mobileMenu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    <div class="hidden md:flex items-center gap-2" x-show="!isAuthenticated">
-                        <img src="/api/assets/logo-clonex.png" onerror="this.style.opacity='0'"
-                            class="h-8 w-auto object-contain rounded" alt="Logo">
-                        <span class="text-textMain font-bold text-xl tracking-wide flex items-center gap-2">Clone<span
-                                class="text-[#7170ff]">X</span></span>
+            <div class="px-8 pt-8 pb-4 shrink-0 transition-all duration-500 z-30 relative" x-show="isAuthenticated">
+                <header class="ethereal-shell !rounded-full !px-2 !py-2 flex items-center justify-between">
+                    <div class="ethereal-core !rounded-full !bg-transparent !shadow-none flex items-center justify-between w-full px-6 py-2">
+                        <div class="flex items-center gap-6">
+                            <button aria-label="Toggle mobile menu" class="md:hidden text-textMuted hover:text-white transition-colors" @click="mobileMenu = !mobileMenu">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                            </button>
+                            <h1 class="text-xl font-medium tracking-tight text-white hidden md:block"
+                                x-text="{ 'dashboard': 'Dashboard', 'clonagem': 'Clonagem', 'contas': 'Contas do Telegram', 'logs': 'Monitoramento', 'settings': 'Configurações' }[currentTab] || currentTab"></h1>
+                        </div>
+
+                        <div class="flex gap-6 items-center">
+                            <div class="hidden md:flex items-center gap-4 text-[11px] uppercase tracking-widest font-mono text-textMuted">
+                                <div class="flex items-center gap-2" :class="hwStats.cpu > 80 ? 'text-red-400' : ''">
+                                    <span class="opacity-50">CPU</span>
+                                    <span x-text="hwStats.cpu + '%'" class="text-white"></span>
+                                </div>
+                                <div class="w-px h-3 bg-white/10"></div>
+                                <div class="flex items-center gap-2" :class="hwStats.ram > 80 ? 'text-red-400' : ''">
+                                    <span class="opacity-50">RAM</span>
+                                    <span x-text="hwStats.ram + '%'" class="text-white"></span>
+                                </div>
+                                <div class="w-px h-3 bg-white/10"></div>
+                                <div class="flex items-center gap-2"
+                                    :class="hwStats.is_critical ? 'text-red-400 animate-pulse' : (hwStats.disk > 80 ? 'text-amber-400' : '')">
+                                    <span class="opacity-50">DSK</span>
+                                    <span x-text="hwStats.disk_free_gb + 'GB'" class="text-white"></span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-4 border-l border-white/10 pl-6">
+                                <span class="text-emerald-400 text-[10px] uppercase tracking-[0.2em] font-medium flex items-center gap-2">
+                                    <span class="relative flex h-2 w-2">
+                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-20"></span>
+                                      <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                                    </span>
+                                    Sistema Online
+                                </span>
+
+                                <button @click="shutdownSystem()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 text-textMuted hover:text-red-400 flex items-center justify-center transition-all duration-500" aria-label="Desligar">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v8l9-11h-7z" x-show="false"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"></path></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <!-- Titulo Dinâmico da Aba Atual -->
-                    <h1 x-show="isAuthenticated" class="text-xl font-medium tracking-tight text-textMain capitalize hidden md:block"
-                        x-text="currentTab"></h1>
-                </div>
-
-                <div class="flex gap-4 items-center">
-                    <div class="hidden md:flex gap-4 text-xs bg-bgSurfaceHover/50 border border-borderSubtle px-3 py-1 rounded"
-                        x-show="isAuthenticated">
-                        <div class="flex items-center gap-1" :class="hwStats.cpu > 80 ? 'text-red-500' : ''">
-                            <span class="font-medium tracking-tight text-textMuted">CPU</span>
-                            <span x-text="hwStats.cpu + '%'" class="text-textSec"></span>
-                        </div>
-                        <div class="flex items-center gap-1" :class="hwStats.ram > 80 ? 'text-red-500' : ''">
-                            <span class="font-medium tracking-tight text-textMuted">RAM</span>
-                            <span x-text="hwStats.ram + '%'" class="text-textSec"></span>
-                        </div>
-                        <div class="flex items-center gap-1"
-                            :class="hwStats.is_critical ? 'text-red-500 animate-pulse' : (hwStats.disk > 80 ? 'text-yellow-500' : '')">
-                            <span class="font-medium tracking-tight text-textMuted">Disco Livre</span>
-                            <span x-text="hwStats.disk_free_gb + 'GB'" class="text-textSec"></span>
-                        </div>
-                    </div>
-
-                    <span x-show="isAuthenticated"
-                        class="text-green-500 font-bold text-xs flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded-full"><span
-                            class="w-2 h-2 rounded-full bg-green-500"></span> Online</span>
-
-                    <!-- Botão de Desligar Sistema -->
-                    <button @click="shutdownSystem()" x-show="isAuthenticated"
-                        class="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-600/90 hover:bg-red-500 text-textMain font-bold rounded shadow transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                            </path>
-                        </svg>
-                        <span class="hidden md:inline">Desligar</span>
-                    </button>
-                </div>
-            </header>
+                </header>
+            </div>
 
             <!-- Scrollable Main Content -->
-            <main class="flex-1 overflow-y-auto p-6 relative" x-cloak>
+            <main class="flex-1 w-full overflow-y-auto p-6 md:p-12 relative flex flex-col items-center" x-cloak>
                 <!-- Ovelay mobile menu close -->
                 <div x-show="mobileMenu && isAuthenticated" @click="mobileMenu = false"
                     class="fixed inset-0 bg-black/50 z-10 md:hidden"></div>
                 <!-- TELA DE LOGIN -->
-                <div x-show="!isAuthenticated"
-                    class="max-w-md mx-auto mt-20 bg-card p-8 rounded-xl border border-borderStd shadow-xl">
-                    <h2 class="text-3xl font-medium tracking-tight mb-6 text-center text-textMain">Login <span
-                            class="text-[#7170ff]">Painel</span></h2>
-                    <form @submit.prevent="login" class="space-y-4">
-                        <input type="text" x-model="loginForm.username" autocomplete="username"
-                            placeholder="Usuário Admin"
-                            class="w-full px-4 py-3 rounded bg-bgSurface border border-borderStd text-textMain focus:outline-none focus:border-primary">
-                        <input type="password" x-model="loginForm.password" autocomplete="current-password"
-                            placeholder="Senha"
-                            class="w-full px-4 py-3 rounded bg-bgSurface border border-borderStd text-textMain focus:outline-none focus:border-primary">
-                        <button type="submit"
-                            class="w-full py-3 bg-primary text-textMain rounded font-bold hover:bg-blue-600 transition-colors">Entrar</button>
-                    </form>
+                <div x-show="!isAuthenticated" class="min-h-screen flex items-center justify-center -mt-16 absolute inset-0 z-50 bg-[#050505] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#5e6ad2]/10 via-transparent to-transparent">
+                    <div class="ethereal-shell w-full max-w-md transform scale-100 transition-all duration-1000 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-[0_0_80px_rgba(94,106,210,0.15)]">
+                        <div class="ethereal-core p-10 flex flex-col items-center">
+                            
+                            <div class="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-8 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
+                                <img src="/api/assets/logo-clonex.png" onerror="this.style.opacity='0'" class="h-8 w-auto object-contain" alt="Logo">
+                            </div>
+
+                            <h2 class="text-3xl font-medium tracking-tight mb-2 text-white text-center">Acesso ao Sistema</h2>
+                            <p class="text-textMuted text-sm mb-10 text-center tracking-wide">Insira suas credenciais de operador.</p>
+                            
+                            <form @submit.prevent="login" class="w-full space-y-5">
+                                <div>
+                                    <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Usuário Admin</label>
+                                    <input type="text" x-model="loginForm.username" autocomplete="username" placeholder="admin"
+                                        class="w-full px-4 py-4 rounded-2xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors shadow-inner">
+                                </div>
+                                <div>
+                                    <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Senha de Acesso</label>
+                                    <input type="password" x-model="loginForm.password" autocomplete="current-password" placeholder="••••••••"
+                                        class="w-full px-4 py-4 rounded-2xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors shadow-inner">
+                                </div>
+                                <button type="submit" class="group btn-island w-full bg-primary text-white font-medium flex items-center justify-between mt-8 shadow-[0_0_20px_rgba(94,106,210,0.4)]">
+                                    <span>Iniciar Sessão</span>
+                                    <div class="icon-circle">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                    </div>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- DASHBOARD -->
-                <div x-show="isAuthenticated && currentTab === 'dashboard'" class="space-y-6 max-w-5xl mx-auto">
+                <div x-show="isAuthenticated && currentTab === 'dashboard'" class="space-y-8 w-full max-w-4xl mx-auto pb-12 pt-4">
+                    
                     <!-- Banner Customizado Clonei -->
-                    <div class="w-full bg-card rounded-xl border border-borderStd shadow overflow-hidden">
-                        <img src="/api/assets/clonei.png" onerror="this.style.display='none'"
-                            class="w-full h-auto object-cover max-h-[300px]" alt="Dashboard Banner">
+                    <div class="ethereal-shell w-full overflow-hidden">
+                        <div class="ethereal-core p-0 relative overflow-hidden h-[340px] flex items-center group">
+                            <!-- Ethereal overlay gradient on top of the image to blend it into the dark ui -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent z-10 pointer-events-none"></div>
+                            <img src="/api/assets/clonei.png" onerror="this.style.display='none'"
+                                class="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" alt="Dashboard Banner">
+                            
+                            <div class="relative z-20 p-10 flex flex-col justify-end h-full">
+                                <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10 w-max mb-4 backdrop-blur-md">Status do Sistema</span>
+                                <h2 class="text-4xl md:text-5xl font-medium tracking-tight text-white mb-2 text-balance leading-tight">Painel de Operações.</h2>
+                                <p class="text-textMuted max-w-md text-sm tracking-wide">Monitoramento centralizado das pipelines de clonagem, health check e throughput do motor principal.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         <!-- ESTATÍSTICAS PRINCIPAIS (DASHBOARD) -->
-                        <div class="bg-card rounded-xl p-6 border border-borderStd shadow col-span-2">
-                            <h2 class="font-medium tracking-tight mb-4 text-textMain">Estatísticas Gerais</h2>
-                            <div class="grid grid-cols-2 gap-4 text-center">
-                                <div class="bg-bgSurface border border-borderStd p-4 rounded-xl">
-                                    <div class="text-sm text-textMuted mb-1">Processadas</div>
-                                    <div class="text-3xl text-[#7170ff] font-bold mt-2" x-text="stats.processed"></div>
-                                </div>
-                                <div class="bg-red-900/10 border border-red-900/30 p-4 rounded-xl">
-                                    <div class="text-sm text-red-400 mb-1">Falhas</div>
-                                    <div class="text-3xl text-red-500 font-bold cursor-pointer hover:underline mt-2"
-                                        @click="currentTab='logs'; loadFailedMessages()" x-text="stats.failed"
-                                        title="Ver Falhas"></div>
+                        <div class="ethereal-shell col-span-2 hover:shadow-[0_0_40px_rgba(255,255,255,0.02)] transition-shadow duration-700">
+                            <div class="ethereal-core p-8 h-full flex flex-col justify-between">
+                                <h2 class="font-medium tracking-tight mb-8 text-lg text-white">Estatísticas Gerais</h2>
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div class="bg-white/5 border border-white/10 p-6 rounded-3xl relative overflow-hidden group">
+                                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><svg class="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 10V3L4 14h7v8l9-11h-7z"></path></svg></div>
+                                        <div class="text-[11px] uppercase tracking-widest text-textMuted mb-2 font-medium">Processadas</div>
+                                        <div class="text-5xl text-white font-medium tracking-tight mt-4" x-text="stats.processed"></div>
+                                    </div>
+                                    <div class="bg-red-500/5 border border-red-500/10 p-6 rounded-3xl relative overflow-hidden group cursor-pointer hover:bg-red-500/10 transition-colors" @click="currentTab='logs'; loadFailedMessages()" title="Ver Falhas">
+                                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><svg class="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                                        <div class="text-[11px] uppercase tracking-widest text-red-400 mb-2 font-medium">Falhas</div>
+                                        <div class="text-5xl text-red-500 font-medium tracking-tight mt-4" x-text="stats.failed"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-card rounded-xl p-6 border border-borderStd shadow col-span-2">
-                            <h2 class="font-medium tracking-tight mb-4 text-textMain">Status do Motor</h2>
-                            <div class="text-center bg-bgSurface border border-borderStd p-4 rounded-xl mb-4 font-bold text-lg uppercase shadow-inner"
-                                :class="sysStatus==='running' ? 'text-green-500' : (sysStatus==='paused' ? 'text-yellow-500' : 'text-textMuted')"
-                                x-text="sysStatus"></div>
-                            <div class="flex gap-2 mt-4">
-                                <button @click="startFlow()"
-                                    class="flex-1 bg-green-600/20 hover:bg-green-600 text-green-500 hover:text-textMain border border-green-500/50 rounded py-2 font-bold transition-colors"
-                                    :disabled="sysStatus==='running'">▶ Iniciar</button>
-                                <button @click="pauseFlow()"
-                                    class="flex-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-500 hover:text-textMain border border-yellow-500/50 rounded py-2 font-bold transition-colors"
-                                    :disabled="sysStatus!=='running'">⏸ Pausar</button>
-                                <button @click="stopFlow()"
-                                    class="flex-1 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-textMain border border-red-500/50 rounded py-2 font-bold transition-colors"
-                                    :disabled="sysStatus==='idle'">⏹ Parar</button>
+                        <div class="ethereal-shell col-span-2">
+                            <div class="ethereal-core p-8 h-full flex flex-col justify-between">
+                                <h2 class="font-medium tracking-tight mb-6 text-lg text-white">Estado do Motor</h2>
+                                
+                                <div class="relative w-full h-32 bg-white/5 border border-white/10 rounded-3xl mb-6 flex items-center justify-center overflow-hidden">
+                                    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] opacity-20"
+                                        :class="sysStatus==='running' ? 'from-emerald-400 to-transparent' : (sysStatus==='paused' ? 'from-amber-400 to-transparent' : 'from-white/10 to-transparent')"></div>
+                                    <div class="text-center font-medium text-2xl uppercase tracking-[0.2em] relative z-10 drop-shadow-lg"
+                                        :class="sysStatus==='running' ? 'text-emerald-400' : (sysStatus==='paused' ? 'text-amber-400' : 'text-textMuted')"
+                                        x-text="{ 'running': 'Executando', 'paused': 'Pausado', 'idle': 'Aguardando' }[sysStatus] || sysStatus"></div>
+                                </div>
+                                
+                                <div class="flex gap-4">
+                                    <button @click="startFlow()"
+                                        class="flex-1 bg-white/5 hover:bg-emerald-500/20 text-white hover:text-emerald-400 border border-white/10 hover:border-emerald-500/30 rounded-2xl py-4 font-medium transition-all duration-500 flex items-center justify-center gap-2 group"
+                                        :disabled="sysStatus==='running'">
+                                        <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                                        <span class="text-sm">Iniciar</span>
+                                    </button>
+                                    <button @click="pauseFlow()"
+                                        class="flex-1 bg-white/5 hover:bg-amber-500/20 text-white hover:text-amber-400 border border-white/10 hover:border-amber-500/30 rounded-2xl py-4 font-medium transition-all duration-500 flex items-center justify-center gap-2 group"
+                                        :disabled="sysStatus!=='running'">
+                                        <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                                        <span class="text-sm">Pausar</span>
+                                    </button>
+                                    <button @click="stopFlow()"
+                                        class="flex-1 bg-white/5 hover:bg-red-500/20 text-white hover:text-red-400 border border-white/10 hover:border-red-500/30 rounded-2xl py-4 font-medium transition-all duration-500 flex items-center justify-center gap-2 group"
+                                        :disabled="sysStatus==='idle'">
+                                        <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"></path></svg>
+                                        <span class="text-sm">Parar</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-
                 <!-- CLONAGEM -->
                 <div x-show="isAuthenticated && currentTab === 'clonagem'"
-                    class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div class="xl:col-span-2 space-y-6">
-                        <!-- SELECAO COM FOTO E FEED LADO A LADO -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="bg-card rounded-xl p-6 shadow border border-borderStd">
-                                <h2 class="font-medium tracking-tight mb-4 text-textMain">Mapeamento de Chats</h2>
-
-                                <div class="mb-6">
-                                    <label class="text-[#7170ff] font-bold flex justify-between items-center mb-1">
-                                        Origem
-                                        <div
-                                            class="flex text-xs bg-sidebar border border-borderSubtle rounded overflow-hidden">
-                                            <button @click="filterSource='all'"
-                                                :class="filterSource==='all' ? 'bg-primary text-textMain' : 'text-textMuted'"
-                                                class="px-2 py-1 transition-colors">Todos</button>
-                                            <button @click="filterSource='channel'"
-                                                :class="filterSource==='channel' ? 'bg-primary text-textMain' : 'text-textMuted'"
-                                                class="px-2 py-1 transition-colors border-l border-r border-borderSubtle">Canais</button>
-                                            <button @click="filterSource='group'"
-                                                :class="filterSource==='group' ? 'bg-primary text-textMain' : 'text-textMuted'"
-                                                class="px-2 py-1 transition-colors">Grupos</button>
-                                        </div>
-                                    </label>
-                                    <input type="text" x-model="searchSource" placeholder="Buscar…"
-                                        class="w-full mb-2 px-3 py-2 rounded bg-bgSurface border border-borderStd focus:outline-none focus:border-primary transition-colors text-sm text-textMain">
-                                    <ul
-                                        class="h-48 overflow-y-auto rounded bg-bgSurface border border-borderStd p-1 space-y-1">
-                                        <template x-for="chat in filteredChats(searchSource, filterSource)"
-                                            :key="chat.id">
-                                            <li @click="selectSourceChat(chat.id)"
-                                                class="cursor-pointer p-2 flex items-center gap-3 rounded hover:bg-bgSurfaceHover"
-                                                :class="config.source_chat_id === chat.id ? 'bg-primary/20 border border-primary/50' : ''">
-                                                <img :src="chat.avatar ? chat.avatar : '/api/assets/icon.ico'"
-                                                    class="w-10 h-10 rounded-full bg-bgSurfaceHover object-cover"
-                                                    onerror="this.style.opacity='0'">
-                                                <div class="flex-1 text-sm truncate font-medium text-textMain"
-                                                    x-text="chat.title"></div>
-                                                <span class="text-xs px-2 py-0.5 bg-bgSurfaceHover text-textMuted rounded-full"
-                                                    x-text="chat.chat_type === 'channel' ? 'C' : 'G'"></span>
-                                            </li>
-                                        </template>
-                                    </ul>
+                    class="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full max-w-5xl mx-auto pb-12 pt-4">
+                    
+                    <div class="xl:col-span-2 flex flex-col gap-8">
+                        <!-- Mapeamento de Chats -->
+                        <div class="ethereal-shell">
+                            <div class="ethereal-core p-8">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10">Mapeamento</span>
+                                    <h2 class="font-medium tracking-tight text-2xl text-white">Seleção de Rotas</h2>
                                 </div>
 
-                                <div>
-                                    <label class="text-green-500 font-bold flex justify-between items-center mb-1">
-                                        Destino
-                                        <div
-                                            class="flex text-xs bg-sidebar border border-borderSubtle rounded overflow-hidden">
-                                            <button @click="filterDest='all'"
-                                                :class="filterDest==='all' ? 'bg-green-600 text-textMain' : 'text-textMuted'"
-                                                class="px-2 py-1 transition-colors">Todos</button>
-                                            <button @click="filterDest='channel'"
-                                                :class="filterDest==='channel' ? 'bg-green-600 text-textMain' : 'text-textMuted'"
-                                                class="px-2 py-1 transition-colors border-l border-r border-borderSubtle">Canais</button>
-                                            <button @click="filterDest='group'"
-                                                :class="filterDest==='group' ? 'bg-green-600 text-textMain' : 'text-textMuted'"
-                                                class="px-2 py-1 transition-colors">Grupos</button>
-                                        </div>
-                                    </label>
-                                    <input type="text" x-model="searchDest" placeholder="Buscar…"
-                                        class="w-full mb-2 px-3 py-2 rounded bg-bgSurface border border-borderStd focus:outline-none focus:border-green-500 transition-colors text-sm text-textMain">
-                                    <ul
-                                        class="h-48 overflow-y-auto rounded bg-bgSurface border border-borderStd p-1 space-y-1">
-                                        <template x-for="chat in filteredChats(searchDest, filterDest)" :key="chat.id">
-                                            <li @click="config.dest_chat_id = chat.id"
-                                                class="cursor-pointer p-2 flex items-center gap-3 rounded hover:bg-bgSurfaceHover"
-                                                :class="config.dest_chat_id === chat.id ? 'bg-green-900/30 border border-green-600/50' : ''">
-                                                <img :src="chat.avatar ? chat.avatar : '/api/assets/icon.ico'"
-                                                    class="w-10 h-10 rounded-full bg-bgSurfaceHover object-cover"
-                                                    onerror="this.style.opacity='0'">
-                                                <div class="flex-1 text-sm truncate font-medium text-textMain"
-                                                    x-text="chat.title"></div>
-                                                <span class="text-xs px-2 py-0.5 bg-bgSurfaceHover text-textMuted rounded-full"
-                                                    x-text="chat.chat_type === 'channel' ? 'C' : 'G'"></span>
-                                            </li>
-                                        </template>
-                                    </ul>
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <!-- Origem -->
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest flex justify-between items-center mb-3 font-medium">
+                                            <span class="text-primary">Sessão de Origem</span>
+                                            <div class="flex bg-white/5 border border-white/10 rounded-full overflow-hidden p-0.5">
+                                                <button @click="filterSource='all'" :class="filterSource==='all' ? 'bg-white/10 text-white' : 'text-textMuted hover:text-white'" class="px-3 py-1 text-[10px] rounded-full transition-colors">Todos</button>
+                                                <button @click="filterSource='channel'" :class="filterSource==='channel' ? 'bg-white/10 text-white' : 'text-textMuted hover:text-white'" class="px-3 py-1 text-[10px] rounded-full transition-colors">Canais</button>
+                                                <button @click="filterSource='group'" :class="filterSource==='group' ? 'bg-white/10 text-white' : 'text-textMuted hover:text-white'" class="px-3 py-1 text-[10px] rounded-full transition-colors">Grupos</button>
+                                            </div>
+                                        </label>
+                                        <input type="text" x-model="searchSource" placeholder="Buscar canal ou grupo…"
+                                            class="w-full mb-3 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors shadow-inner text-sm">
+                                        <ul class="h-56 overflow-y-auto rounded-xl bg-black/40 border border-white/5 p-2 space-y-1 custom-scrollbar shadow-inner">
+                                            <template x-for="chat in filteredChats(searchSource, filterSource)" :key="chat.id">
+                                                <li @click="selectSourceChat(chat.id)"
+                                                    class="cursor-pointer p-3 flex items-center gap-4 rounded-lg transition-all duration-300"
+                                                    :class="config.source_chat_id === chat.id ? 'bg-primary/20 border border-primary/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'hover:bg-white/5 border border-transparent'">
+                                                    <img :src="chat.avatar ? chat.avatar : '/api/assets/icon.ico'" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 object-cover" onerror="this.style.opacity='0'">
+                                                    <div class="flex-1 text-sm truncate font-medium text-white" x-text="chat.title"></div>
+                                                    <span class="text-[10px] px-2 py-1 bg-white/10 text-textMuted rounded-full font-mono" x-text="chat.chat_type === 'channel' ? 'C' : 'G'"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Destino -->
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest flex justify-between items-center mb-3 font-medium">
+                                            <span class="text-emerald-400">Sessão de Destino</span>
+                                            <div class="flex bg-white/5 border border-white/10 rounded-full overflow-hidden p-0.5">
+                                                <button @click="filterDest='all'" :class="filterDest==='all' ? 'bg-white/10 text-white' : 'text-textMuted hover:text-white'" class="px-3 py-1 text-[10px] rounded-full transition-colors">Todos</button>
+                                                <button @click="filterDest='channel'" :class="filterDest==='channel' ? 'bg-white/10 text-white' : 'text-textMuted hover:text-white'" class="px-3 py-1 text-[10px] rounded-full transition-colors">Canais</button>
+                                                <button @click="filterDest='group'" :class="filterDest==='group' ? 'bg-white/10 text-white' : 'text-textMuted hover:text-white'" class="px-3 py-1 text-[10px] rounded-full transition-colors">Grupos</button>
+                                            </div>
+                                        </label>
+                                        <input type="text" x-model="searchDest" placeholder="Buscar canal ou grupo…"
+                                            class="w-full mb-3 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-colors shadow-inner text-sm">
+                                        <ul class="h-56 overflow-y-auto rounded-xl bg-black/40 border border-white/5 p-2 space-y-1 custom-scrollbar shadow-inner">
+                                            <template x-for="chat in filteredChats(searchDest, filterDest)" :key="chat.id">
+                                                <li @click="config.dest_chat_id = chat.id"
+                                                    class="cursor-pointer p-3 flex items-center gap-4 rounded-lg transition-all duration-300"
+                                                    :class="config.dest_chat_id === chat.id ? 'bg-emerald-500/10 border border-emerald-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'hover:bg-white/5 border border-transparent'">
+                                                    <img :src="chat.avatar ? chat.avatar : '/api/assets/icon.ico'" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 object-cover" onerror="this.style.opacity='0'">
+                                                    <div class="flex-1 text-sm truncate font-medium text-white" x-text="chat.title"></div>
+                                                    <span class="text-[10px] px-2 py-1 bg-white/10 text-textMuted rounded-full font-mono" x-text="chat.chat_type === 'channel' ? 'C' : 'G'"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- FEED VISUAL DO CHAT DE ORIGEM -->
-                            <div class="bg-card border border-borderStd rounded-xl p-6 shadow flex flex-col h-full">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h2 class="font-medium tracking-tight flex items-center gap-2 text-textMain">
-                                        Feed de Origem
-                                        <span x-show="feedLoading"
-                                            class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
-                                    </h2>
+                        <!-- FEED VISUAL DO CHAT DE ORIGEM -->
+                        <div class="ethereal-shell flex-1">
+                            <div class="ethereal-core p-8 flex flex-col h-full">
+                                <div class="flex justify-between items-center mb-6">
+                                    <div class="flex items-center gap-3">
+                                        <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10">Visualização</span>
+                                        <h2 class="font-medium tracking-tight text-2xl text-white flex items-center gap-3">
+                                            Feed de Origem
+                                            <span x-show="feedLoading" class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                                        </h2>
+                                    </div>
                                 </div>
 
                                 <div id="feed-container" @scroll="handleFeedScroll"
-                                    class="flex-1 bg-bgSurface border border-borderStd rounded p-2 overflow-y-auto min-h-[400px] max-h-[400px]">
-                                    <div x-show="!config.source_chat_id"
-                                        class="text-center text-textMuted text-sm mt-20">
-                                        Selecione uma Origem para visualizar as mensagens.</div>
+                                    class="flex-1 bg-black/40 border border-white/5 shadow-inner rounded-2xl p-4 overflow-y-auto min-h-[400px] max-h-[500px] custom-scrollbar">
+                                    
+                                    <div x-show="!config.source_chat_id" class="flex flex-col items-center justify-center h-full text-textMuted">
+                                        <svg class="w-12 h-12 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                        <span class="text-sm font-medium tracking-wide">Selecione uma Origem no painel acima.</span>
+                                    </div>
 
-                                    <!-- Botao "Carregar Mais" para fallback de UX caso o infinite scroll falhe -->
-                                    <div x-show="feedMessages.length > 0 && hasMoreFeed" class="text-center py-2">
-                                        <button @click="loadMoreFeed()"
-                                            class="text-xs text-[#7170ff] hover:underline">Carregar
-                                            mensagens antigas...</button>
+                                    <div x-show="feedMessages.length > 0 && hasMoreFeed" class="text-center py-4">
+                                        <button @click="loadMoreFeed()" class="text-[11px] text-textMuted hover:text-white uppercase tracking-widest font-medium transition-colors">Carregar histórico anterior…</button>
                                     </div>
 
                                     <template x-for="msg in feedMessages" :key="msg.id">
                                         <div :id="'msg-' + msg.id"
-                                            class="bg-card p-3 rounded mb-2 shadow-sm border border-borderStd relative transition-colors duration-500"
-                                            :class="currentCheckpoint && currentCheckpoint.last_message_id === msg.id ? 'ring-2 ring-green-500 bg-green-900/10' : ''">
-                                            <div
-                                                class="flex justify-between items-start mb-2 border-b border-borderStd pb-1">
-                                                <div class="flex items-center gap-2">
-                                                    <input type="checkbox" x-show="config.scope === 'history'"
-                                                        :value="msg.id" x-model="selectedFeedMessages"
-                                                        class="w-4 h-4 text-blue-600 rounded">
-                                                    <span class="text-xs font-bold text-textMuted"
-                                                        x-text="'#' + msg.id"></span>
-                                                </div>
-                                                <span class="text-[10px] text-textMuted"
-                                                    x-text="new Date(msg.date).toLocaleString()"></span>
-                                            </div>
-
-                                            <div class="text-sm mb-2 break-words whitespace-pre-wrap text-textMain"
-                                                x-text="msg.text || '[Sem texto/Somente Mídia]'"></div>
-
-                                            <div class="flex justify-between items-center mt-2">
-                                                <div x-show="msg.media_type"
-                                                    class="text-[10px] bg-primary/20 text-[#7170ff] px-2 py-0.5 rounded"
-                                                    x-text="msg.media_type"></div>
-                                                <div x-show="!msg.media_type" class="w-1"></div>
-
-                                                <!-- Botao Definir como Checkpoint (Apenas no Modo Retomar) -->
-                                                <button x-show="config.scope === 'checkpoint'"
-                                                    @click.prevent="checkpointInputId = msg.id; setCheckpointPosition()"
-                                                    class="text-[10px] bg-sidebar border border-borderSubtle hover:bg-primary hover:text-textMain px-2 py-1 rounded transition text-textSec">📍
-                                                    Iniciar Daqui</button>
-                                            </div>
-
+                                            class="bg-white/5 border border-white/10 p-5 rounded-2xl mb-4 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] relative overflow-hidden"
+                                            :class="currentCheckpoint && currentCheckpoint.last_message_id === msg.id ? 'ring-1 ring-emerald-500/50 bg-emerald-500/5' : 'hover:bg-white/10'">
+                                            
                                             <!-- PIN Visual de Checkpoint -->
                                             <div x-show="currentCheckpoint && currentCheckpoint.last_message_id === msg.id"
-                                                class="absolute -top-2 -right-2 bg-green-500 text-textMain text-[10px] font-bold px-2 py-0.5 rounded shadow z-10 flex items-center gap-1">
-                                                📍 Checkpoint Atual
+                                                class="absolute top-0 right-0 bg-emerald-500 text-white text-[9px] uppercase tracking-widest font-bold px-3 py-1 rounded-bl-xl shadow-lg z-10">
+                                                Ponto de Checkpoint
+                                            </div>
+
+                                            <div class="flex justify-between items-start mb-4 border-b border-white/5 pb-3">
+                                                <div class="flex items-center gap-3">
+                                                    <input type="checkbox" x-show="config.scope === 'history'" :value="msg.id" x-model="selectedFeedMessages" class="w-4 h-4 rounded border-white/20 bg-black/50 text-primary focus:ring-primary focus:ring-offset-0">
+                                                    <span class="text-[11px] font-mono text-textMuted bg-black/30 px-2 py-0.5 rounded-md" x-text="'#' + msg.id"></span>
+                                                </div>
+                                                <span class="text-[10px] text-textMuted tracking-wider" x-text="new Date(msg.date).toLocaleString()"></span>
+                                            </div>
+
+                                            <div class="text-sm mb-4 break-words whitespace-pre-wrap text-textMain leading-relaxed" x-text="msg.text || '[ Mídia Sem Legenda ]'"></div>
+
+                                            <div class="flex justify-between items-center mt-4">
+                                                <div x-show="msg.media_type" class="text-[10px] bg-white/10 text-white px-2 py-1 rounded-full uppercase tracking-wider font-medium" x-text="msg.media_type"></div>
+                                                <div x-show="!msg.media_type" class="w-1"></div>
+
+                                                <button x-show="config.scope === 'checkpoint'" @click.prevent="checkpointInputId = msg.id; setCheckpointPosition()"
+                                                    class="text-[10px] bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white px-3 py-1.5 rounded-full transition-colors text-textMuted uppercase tracking-wider font-medium">📍 Iniciar Daqui</button>
                                             </div>
                                         </div>
                                     </template>
@@ -432,156 +467,152 @@
                         </div>
                     </div>
 
-                    <!-- CONFIGURAÇÕES DE OPERAÇÃO LADO DIREITO -->
-                    <div class="bg-card border border-borderStd rounded-xl p-6 shadow">
-                        <h2 class="font-medium tracking-tight mb-4 text-textMain">Configurações e Substituição</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                            <select x-model="config.mode"
-                                class="bg-background text-textMain border border-borderStd rounded p-2 text-sm focus:border-primary focus:outline-none">
-                                <option value="replicate">Replicar</option>
-                                <option value="forward">Encaminhar</option>
-                            </select>
-                            <select x-model="config.scope"
-                                class="bg-background text-textMain border border-borderStd rounded p-2 text-sm focus:border-primary focus:outline-none">
-                                <option value="history">Histórico</option>
-                                <option value="new">Novas</option>
-                                <option value="checkpoint"
-                                    title="Continua a cópia exatamente de onde parou após uma pausa, falha ou reinicialização, evitando mensagens duplicadas.">
-                                    Retomar de um Checkpoint</option>
-                            </select>
-                            <select x-model="config.speed_profile"
-                                class="bg-background text-textMain border border-borderStd rounded p-2 text-sm focus:border-primary focus:outline-none">
-                                <option value="safe">Seguro</option>
-                                <option value="moderate">Médio</option>
-                                <option value="fast">Rápido</option>
-                                <option value="insane">Insano</option>
-                            </select>
-                        </div>
+                    <!-- Lado Direito: CONFIGURAÇÕES -->
+                    <div class="xl:col-span-1 space-y-8">
+                        <div class="ethereal-shell">
+                            <div class="ethereal-core p-8">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10">Regras</span>
+                                    <h2 class="font-medium tracking-tight text-2xl text-white">Parâmetros</h2>
+                                </div>
+                                
+                                <div class="space-y-5 mb-8">
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Modo de Operação</label>
+                                        <select x-model="config.mode" class="w-full bg-white/5 text-white border border-white/10 rounded-xl p-3 text-sm focus:border-primary focus:outline-none appearance-none cursor-pointer">
+                                            <option value="replicate" class="bg-[#0A0A0A]">Replicar Metadados (Clone)</option>
+                                            <option value="forward" class="bg-[#0A0A0A]">Encaminhamento Simples</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Escopo de Leitura</label>
+                                        <select x-model="config.scope" class="w-full bg-white/5 text-white border border-white/10 rounded-xl p-3 text-sm focus:border-primary focus:outline-none appearance-none cursor-pointer">
+                                            <option value="history" class="bg-[#0A0A0A]">Histórico Completo</option>
+                                            <option value="new" class="bg-[#0A0A0A]">Apenas Novas</option>
+                                            <option value="checkpoint" class="bg-[#0A0A0A]">Retomar Checkpoint</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Perfil de Velocidade</label>
+                                        <select x-model="config.speed_profile" class="w-full bg-white/5 text-white border border-white/10 rounded-xl p-3 text-sm focus:border-primary focus:outline-none appearance-none cursor-pointer">
+                                            <option value="safe" class="bg-[#0A0A0A]">Seguro (Evita FloodWait)</option>
+                                            <option value="moderate" class="bg-[#0A0A0A]">Moderado</option>
+                                            <option value="fast" class="bg-[#0A0A0A]">Rápido</option>
+                                            <option value="insane" class="bg-[#0A0A0A]">Insano (Risco Alto)</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                        <!-- Input para forçar Checkpoint caso o usuario selecione Retomar / Histórico e haja um Checkpoint ativo -->
-                        <div x-show="['history', 'checkpoint'].includes(config.scope)"
-                            class="mb-4 p-3 bg-card border border-borderStd rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div class="flex-1 w-full">
-                                <label class="text-xs font-bold text-textMuted block mb-1">ID da Mensagem para
-                                    iniciar/retomar:</label>
-                                <input type="number" x-model="checkpointInputId"
-                                    class="w-full px-3 py-2 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                            </div>
-                            <button @click="setCheckpointPosition()"
-                                class="sm:mt-4 px-3 py-2 bg-primary hover:bg-blue-600 text-textMain text-xs font-bold rounded transition whitespace-nowrap w-full sm:w-auto">Atualizar
-                                Posição</button>
-                        </div>
+                                <div x-show="['history', 'checkpoint'].includes(config.scope)" x-transition
+                                    class="mb-8 p-5 bg-white/5 border border-white/10 rounded-2xl shadow-inner">
+                                    <label class="text-[11px] text-white uppercase tracking-widest block mb-2 font-medium">Sincronização Manual de Checkpoint</label>
+                                    <div class="flex gap-2">
+                                        <input type="number" x-model="checkpointInputId" placeholder="ID da Mensagem"
+                                            class="w-full px-3 py-2 rounded-xl bg-black/50 text-sm text-white border border-white/10 focus:outline-none focus:border-primary text-center font-mono">
+                                        <button @click="setCheckpointPosition()"
+                                            class="px-4 py-2 bg-primary hover:bg-primaryHover text-white text-xs font-medium rounded-xl transition shadow-[0_0_15px_rgba(94,106,210,0.3)]">Definir</button>
+                                    </div>
+                                </div>
 
-                        <div x-show="config.scope === 'checkpoint'"
-                            class="mb-4 text-xs text-textMuted bg-card border border-borderStd p-3 rounded">
-                            <strong class="text-[#7170ff]">Retomar de um Checkpoint:</strong> Continua a cópia exatamente
-                            de onde
-                            parou após uma pausa, falha ou reinicialização, evitando mensagens duplicadas.
-                        </div>
+                                <div class="space-y-6">
+                                    <h3 class="text-[10px] uppercase tracking-[0.2em] font-medium text-textMuted border-b border-white/5 pb-2">Substituição de Links</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex gap-2"><input type="text" x-model="replaceForm.link1_old" placeholder="Link original…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"><input type="text" x-model="replaceForm.link1_new" placeholder="Novo link…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"></div>
+                                        <div class="flex gap-2"><input type="text" x-model="replaceForm.link2_old" placeholder="Link original…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"><input type="text" x-model="replaceForm.link2_new" placeholder="Novo link…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"></div>
+                                    </div>
 
-                        <div class="space-y-4">
-                            <h3 class="text-sm font-bold text-textSec border-b border-borderStd pb-1">Substituição de
-                                Links/URLs
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <input type="text" x-model="replaceForm.link1_old" placeholder="Link original 1…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                                <input type="text" x-model="replaceForm.link1_new" placeholder="Novo link 1…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-
-                                <input type="text" x-model="replaceForm.link2_old" placeholder="Link original 2…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                                <input type="text" x-model="replaceForm.link2_new" placeholder="Novo link 2…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-
-                                <input type="text" x-model="replaceForm.link3_old" placeholder="Link original 3…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                                <input type="text" x-model="replaceForm.link3_new" placeholder="Novo link 3…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                            </div>
-
-                            <h3 class="text-sm font-bold text-textSec border-b border-borderStd pb-1 mt-4">Substituição
-                                de
-                                Usernames (@user)</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <input type="text" x-model="replaceForm.user1_old" placeholder="@original 1…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                                <input type="text" x-model="replaceForm.user1_new" placeholder="@novo 1…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-
-                                <input type="text" x-model="replaceForm.user2_old" placeholder="@original 2…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                                <input type="text" x-model="replaceForm.user2_new" placeholder="@novo 2…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-
-                                <input type="text" x-model="replaceForm.user3_old" placeholder="@original 3…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
-                                <input type="text" x-model="replaceForm.user3_new" placeholder="@novo 3…"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary">
+                                    <h3 class="text-[10px] uppercase tracking-[0.2em] font-medium text-textMuted border-b border-white/5 pb-2 pt-2">Substituição de Mentions</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex gap-2"><input type="text" x-model="replaceForm.user1_old" placeholder="@original…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"><input type="text" x-model="replaceForm.user1_new" placeholder="@novo…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"></div>
+                                        <div class="flex gap-2"><input type="text" x-model="replaceForm.user2_old" placeholder="@original…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"><input type="text" x-model="replaceForm.user2_new" placeholder="@novo…" class="w-full p-2.5 rounded-lg bg-black/40 text-xs text-white border border-white/5 focus:border-primary outline-none"></div>
+                                    </div>
+                                </div>
+                                
+                                <button @click="applyReplacements"
+                                    class="group btn-island w-full bg-white text-black font-medium flex items-center justify-center mt-8">
+                                    <span>Salvar Regras</span>
+                                    <div class="icon-circle !bg-black/10 ml-3">
+                                        <svg class="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                </button>
                             </div>
                         </div>
-                        <button @click="applyReplacements"
-                            class="mt-6 px-4 py-3 bg-bgSurfaceHover text-sm font-bold w-full rounded hover:bg-primary hover:text-textMain transition text-textMain">Gravar
-                            Regras de Substituição</button>
-                    </div>
 
-                    <!-- TESTE DE MENSAGEM ÚNICA -->
-                    <div class="bg-card border border-borderStd rounded-xl p-6 shadow mt-6">
-                        <h2 class="font-medium tracking-tight mb-4 text-textMain">Testar Mensagem Única</h2>
-                        <div class="flex flex-col gap-4">
-                            <div>
-                                <label class="text-xs font-bold text-textMuted block mb-1">ID da Mensagem ou Link do Telegram:</label>
-                                <input type="text" x-model="singleTestInput" placeholder="Ex: 12345 ou https://t.me/c/1234567/12345"
-                                    class="w-full px-3 py-2 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary transition-colors">
+                        <!-- Teste Único -->
+                        <div class="ethereal-shell mt-8">
+                            <div class="ethereal-core p-8">
+                                <h2 class="font-medium tracking-tight mb-4 text-lg text-white">Teste de Mensagem Individual</h2>
+                                <p class="text-xs text-textMuted mb-4">Envie uma única mensagem para testar a pipeline de extração e substituição.</p>
+                                <div class="flex flex-col gap-4">
+                                    <input type="text" x-model="singleTestInput" placeholder="ID ou URL da msg…"
+                                        class="w-full px-4 py-3 rounded-xl bg-white/5 text-sm text-white border border-white/10 focus:outline-none focus:border-primary">
+                                    <button @click="testSingleMessage()"
+                                        class="group btn-island bg-white/5 hover:bg-white/10 text-white font-medium flex items-center justify-center border border-white/10">
+                                        <span>Testar Fluxo</span>
+                                    </button>
+                                </div>
                             </div>
-                            <button @click="testSingleMessage()"
-                                class="px-4 py-2 bg-primary hover:bg-blue-600 text-textMain text-sm font-bold rounded transition-colors w-full sm:w-auto self-start">
-                                Testar Agora
-                            </button>
                         </div>
                     </div>
                 </div>
 
-
-                <!-- ABA DE CONTAS -->
-                <div x-show="isAuthenticated && currentTab === 'contas'" class="max-w-3xl mx-auto space-y-6">
+<!-- ABA DE CONTAS -->
+                <div x-show="isAuthenticated && currentTab === 'contas'" class="w-full flex justify-center"><div class="w-full max-w-3xl space-y-6">
                     <!-- GERENCIAMENTO DE CONTAS -->
-                    <div class="bg-card rounded-xl p-6 shadow border border-borderStd">
-                        <h2 class="font-medium tracking-tight mb-4 text-lg text-textMain">Contas do Telegram</h2>
-                        <div class="grid grid-cols-1 gap-4">
-                            <template x-for="acc in accounts" :key="acc.id">
-                                <div class="border p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors"
-                                    :class="activeAccount === acc.id ? 'bg-primary/5 border-primary/30' : 'bg-bgSurface border-borderSubtle hover:bg-bgSurfaceHover'">
-                                    <div>
-                                        <div class="font-medium tracking-tight text-textMain flex items-center gap-2">
-                                            Conta <span x-text="acc.id"></span>
-                                            <span x-show="activeAccount === acc.id"
-                                                class="text-[10px] bg-primary text-textMain px-2 py-0.5 rounded-full">Ativa
-                                                Principal</span>
-                                        </div>
-                                        <div class="text-sm text-textMuted mt-1"
-                                            x-text="acc.phone || 'Sem número configurado. Necessita autenticação.'">
+                    <div class="ethereal-shell mb-8">
+                        <div class="ethereal-core p-8">
+                            <div class="flex items-center gap-3 mb-8">
+                                <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-primary/10 text-primary border border-primary/20">Identidade</span>
+                                <h2 class="font-medium tracking-tight text-2xl text-textMain">Contas do Telegram</h2>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-6">
+                                <template x-for="acc in accounts" :key="acc.id">
+                                    <div class="ethereal-shell transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/5"
+                                        :class="activeAccount === acc.id ? 'border-primary/40' : 'border-white/5'">
+                                        <div class="ethereal-core p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                            <div class="flex items-start gap-4">
+                                                <div class="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                                                    <svg class="w-5 h-5 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <div class="font-medium tracking-tight text-lg text-textMain flex items-center gap-3">
+                                                        Conta <span x-text="acc.id"></span>
+                                                        <span x-show="activeAccount === acc.id"
+                                                            class="text-[10px] bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded-full uppercase tracking-wider">Ativa Principal</span>
+                                                    </div>
+                                                    <div class="text-sm text-textMuted mt-1 tracking-wide"
+                                                        x-text="acc.phone || 'Sem número configurado. Autenticação pendente.'">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="w-full md:w-auto flex justify-end">
+                                                <button x-show="acc.status !== 'connected'" @click="openTgLogin(acc.id)"
+                                                    class="group btn-island bg-primary text-white font-medium flex items-center gap-3 w-full md:w-auto justify-center">
+                                                    <span>Autenticar Sessão</span>
+                                                    <div class="icon-circle">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                    </div>
+                                                </button>
+                                                
+                                                <div x-show="acc.status === 'connected'" class="flex flex-col items-end gap-2">
+                                                    <span class="text-emerald-400 text-sm font-medium tracking-wide flex items-center gap-2 bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Conectada
+                                                    </span>
+                                                    <button @click="openTgLogin(acc.id)"
+                                                        class="text-[11px] text-textMuted hover:text-primary transition-colors uppercase tracking-wider font-medium">Trocar Número</button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="w-full md:w-auto text-right">
-                                        <button x-show="acc.status !== 'connected'" @click="openTgLogin(acc.id)"
-                                            class="px-4 py-2 w-full md:w-auto bg-primary text-textMain rounded font-bold hover:bg-blue-600 transition-colors">Autenticar</button>
-                                        <span x-show="acc.status === 'connected'"
-                                            class="text-green-500 text-sm font-bold flex flex-col items-end gap-1">
-                                            <div class="flex items-center gap-1"><svg class="w-4 h-4" fill="none"
-                                                    stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                </svg> Conectada (Autenticada)</div>
-                                            <button @click="openTgLogin(acc.id)"
-                                                class="text-xs text-textMuted hover:text-[#7170ff] transition-colors font-normal">Re-Autenticar
-                                                (Trocar Número)</button>
-                                        </span>
-                                    </div>
-                                </div>
-                            </template>
+                                </template>
+                            </div>
                         </div>
-                        <p class="text-xs text-textMuted mt-4">A Conta 1 é a conta operadora principal. A Conta 2
+                    </div>
+                    <p class="text-xs text-textMuted mt-4">A Conta 1 é a conta operadora principal. A Conta 2
                             funciona
                             silenciosamente como fallback em caso de limites e restrições da API (FloodWait) para evitar
                             a
@@ -590,111 +621,121 @@
                 </div>
 
                 <!-- ABA DE CONFIGURAÇÕES -->
-                <div x-show="isAuthenticated && currentTab === 'settings'" class="max-w-3xl mx-auto space-y-6">
-                    <!-- LOGIN DO PAINEL WEB -->
-                    <div class="bg-card rounded-xl p-6 shadow border border-borderStd">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="font-medium tracking-tight text-lg text-textMain">Configurações Gerais do Sistema</h2>
-                            <button @click="saveSettings()"
-                                class="px-4 py-2 text-sm bg-primary text-textMain rounded font-bold hover:bg-blue-600 shadow">Salvar
-                                Configurações</button>
-                        </div>
-                        <form @submit.prevent="saveSettings()">
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="text-xs text-textMuted font-bold block mb-1">Novo Usuário Admin</label>
-                                <input type="text" x-model="appSettings.panel_username"
-                                    placeholder="Deixe em branco para manter"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:border-primary transition-colors">
+                <div x-show="isAuthenticated && currentTab === 'settings'" class="w-full flex justify-center"><div class="w-full max-w-2xl space-y-6">
+                    <div class="ethereal-shell mb-8">
+                        <div class="ethereal-core p-8">
+                            <div class="flex items-center gap-3 mb-8">
+                                <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10">Sistema</span>
+                                <h2 class="font-medium tracking-tight text-2xl text-textMain">Configurações Gerais</h2>
                             </div>
-                            <div>
-                                <label class="text-xs text-textMuted font-bold block mb-1">Nova Senha Admin</label>
-                                <input type="password" autocomplete="new-password" x-model="appSettings.panel_password"
-                                    placeholder="Deixe em branco para manter"
-                                    class="w-full p-3 rounded bg-background text-sm text-textMain border border-borderStd focus:outline-none focus:ring-1 focus:ring-primary transition-colors">
-                            </div>
+                            
+                            <form @submit.prevent="saveSettings()">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Novo Usuário Admin</label>
+                                        <input type="text" x-model="appSettings.panel_username"
+                                            placeholder="Deixe em branco para manter"
+                                            class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors">
+                                    </div>
+                                    <div>
+                                        <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Nova Senha Admin</label>
+                                        <input type="password" autocomplete="new-password" x-model="appSettings.panel_password"
+                                            placeholder="Deixe em branco para manter"
+                                            class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors">
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end">
+                                    <button type="submit"
+                                        class="group btn-island bg-white text-black font-medium flex items-center justify-center gap-3">
+                                        <span>Salvar Configurações</span>
+                                        <div class="icon-circle !bg-black/10">
+                                            <svg class="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        </div>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        </form>
+                    </div>
                     </div>
                 </div>
 
-
                 <!-- ABA DE LOGS -->
-                <div x-show="isAuthenticated && currentTab === 'logs'" class="space-y-6 max-w-5xl mx-auto">
-                    <!-- ESTATÍSTICAS DE FALHAS E ATUALIZAR -->
-                    <div class="flex justify-between items-end mb-4">
-                        <h2 class="font-medium tracking-tight text-lg text-textMain">Eventos e Logs do Sistema</h2>
+                <div x-show="isAuthenticated && currentTab === 'logs'" class="w-full flex justify-center"><div class="w-full max-w-3xl space-y-6">
+                    <div class="flex justify-between items-end mb-6">
+                        <div class="flex items-center gap-3">
+                            <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10">Monitor</span>
+                            <h2 class="font-medium tracking-tight text-2xl text-textMain">Eventos e Logs do Sistema</h2>
+                        </div>
                         <button @click="loadData()"
-                            class="px-4 py-2 text-sm bg-bgSurfaceHover border border-borderSubtle text-textSec rounded font-bold hover:bg-gray-700 hover:text-textMain shadow transition-colors">
-                            Atualizar Logs
+                            class="group btn-island bg-white/5 border border-white/10 text-white hover:bg-white/10 font-medium flex items-center gap-3 px-4 py-2 !rounded-full">
+                            <span class="text-sm">Sincronizar</span>
+                            <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                         </button>
                     </div>
 
-                    <div x-show="stats.failed > 0" class="bg-card border border-red-900/30 rounded-xl p-6 shadow mb-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-red-500 font-bold flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                                    </path>
-                                </svg>
-                                Mensagens com Falha (Pendente de retry)
-                            </h3>
+                    <div x-show="stats.failed > 0" class="ethereal-shell mb-8 border-red-500/20 bg-red-500/5">
+                        <div class="ethereal-core p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div>
+                                <h3 class="text-red-400 font-medium tracking-tight text-lg flex items-center gap-3 mb-1">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                    Fila de Retenção
+                                </h3>
+                                <p class="text-sm text-textMuted tracking-wide">Existem <strong x-text="stats.failed" class="text-white"></strong> mensagens pendentes de reenvio no checkpoint atual.</p>
+                            </div>
                             <button @click="loadFailedMessages()"
-                                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-textMain text-xs rounded font-bold transition">Visualizar
-                                Falhas</button>
+                                class="group btn-island bg-red-500 text-white font-medium flex items-center justify-center gap-3 px-5 py-2">
+                                <span class="text-sm">Inspecionar Falhas</span>
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
                         </div>
-                        <p class="text-sm text-textMuted">Existem <strong x-text="stats.failed"
-                                class="text-textMain"></strong>
-                            mensagens que não puderam ser entregues no checkpoint atual. Clique para gerenciar e
-                            reenviar.</p>
                     </div>
 
-                    <!-- TERMINAL LOGS DA API -->
-                    <div
-                        class="bg-card rounded-xl p-4 shadow border border-borderStd h-[60vh] overflow-y-auto font-mono text-xs flex flex-col">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="sticky top-0 bg-card z-10 shadow-sm pb-2">
-                                <tr>
-                                    <th class="text-textMuted pb-3 font-normal border-b border-borderStd w-24">Horário
-                                    </th>
-                                    <th class="text-textMuted pb-3 font-normal border-b border-borderStd w-20">Nível</th>
-                                    <th class="text-textMuted pb-3 font-normal border-b border-borderStd">Evento</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-800/50">
-                                <template x-if="serverLogs.length === 0">
-                                    <tr>
-                                        <td colspan="3" class="text-center text-gray-600 py-8">Nenhum log encontrado.
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-for="log in serverLogs">
-                                    <tr x-data="{ expanded: false }" class="hover:bg-bgSurfaceHover/30 transition-colors">
-                                            <td class="py-3 text-textMuted align-top" x-text="log.time"></td>
-                                            <td class="py-3 font-bold align-top" :class="{
-                                            'text-green-500': log.level === 'OK' || log.level === 'INFO',
-                                            'text-yellow-500': log.level === 'WARN' || log.level === 'WARNING',
-                                            'text-red-500': log.level === 'ERROR' || log.level === 'CRITICAL'
-                                        }" x-text="log.level"></td>
-                                            <td class="py-3 text-textSec align-top">
-                                                <div class="whitespace-pre-wrap" x-text="log.event"></div>
-                                                <template x-if="log.details">
-                                                    <div class="mt-2">
-                                                        <button @click="expanded = !expanded" class="text-xs bg-bgSurfaceHover hover:bg-gray-700 text-textSec px-2 py-1 rounded transition-colors flex items-center gap-1 border border-borderSubtle">
-                                                            <span x-text="expanded ? '▼' : '▶'"></span>
-                                                            Detalhes JSON
-                                                        </button>
-                                                        <div x-show="expanded" class="mt-2">
-                                                            <pre class="bg-black/50 p-3 rounded-lg overflow-x-auto text-xs text-green-400 font-mono border border-borderStd" x-text="JSON.stringify(log.details, null, 2)"></pre>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </td>
+                    <div class="ethereal-shell h-[60vh]">
+                        <div class="ethereal-core p-2 h-full flex flex-col overflow-hidden">
+                            <div class="overflow-y-auto font-mono text-xs h-full rounded-xl custom-scrollbar pr-2">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="sticky top-0 bg-[#0a0a0a] z-10 shadow-[0_4px_20px_rgba(0,0,0,0.8)] pb-2 backdrop-blur-md">
+                                        <tr>
+                                            <th class="text-textMuted pb-4 pt-4 px-4 font-medium border-b border-white/5 w-28 uppercase tracking-widest text-[10px]">Horário</th>
+                                            <th class="text-textMuted pb-4 pt-4 px-4 font-medium border-b border-white/5 w-24 uppercase tracking-widest text-[10px]">Nível</th>
+                                            <th class="text-textMuted pb-4 pt-4 px-4 font-medium border-b border-white/5 uppercase tracking-widest text-[10px]">Evento</th>
                                         </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                    </thead>
+                                    <tbody class="divide-y divide-white/5">
+                                        <template x-if="serverLogs.length === 0">
+                                            <tr>
+                                                <td colspan="3" class="text-center text-textMuted py-12">O buffer de eventos está vazio.</td>
+                                            </tr>
+                                        </template>
+                                        <template x-for="log in serverLogs">
+                                            <tr x-data="{ expanded: false }" class="hover:bg-white/5 transition-colors duration-300">
+                                                <td class="py-4 px-4 text-textMuted align-top tracking-wider" x-text="log.time"></td>
+                                                <td class="py-4 px-4 font-bold align-top" :class="{
+                                                    'text-emerald-400': log.level === 'OK' || log.level === 'INFO',
+                                                    'text-amber-400': log.level === 'WARN' || log.level === 'WARNING',
+                                                    'text-red-400': log.level === 'ERROR' || log.level === 'CRITICAL'
+                                                }" x-text="log.level"></td>
+                                                <td class="py-4 px-4 text-gray-300 align-top">
+                                                    <div class="whitespace-pre-wrap leading-relaxed" x-text="log.event"></div>
+                                                    <template x-if="log.details">
+                                                        <div class="mt-3">
+                                                            <button @click="expanded = !expanded" class="text-[10px] uppercase tracking-wider bg-white/5 hover:bg-white/10 text-textMuted px-3 py-1.5 rounded-full transition-colors flex items-center gap-2 border border-white/10">
+                                                                <span x-text="expanded ? 'Ocultar Trace' : 'Inspecionar Payload'"></span>
+                                                            </button>
+                                                            <div x-show="expanded" class="mt-3" x-transition>
+                                                                <pre class="bg-black/80 p-4 rounded-xl overflow-x-auto text-[11px] text-emerald-400/80 font-mono border border-white/5 shadow-inner" x-text="JSON.stringify(log.details, null, 2)"></pre>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
             </main>
@@ -761,72 +802,96 @@
 
             <!-- Modal de Login no Telegram (Conta 1 e 2) -->
             <div x-show="showTgAuthModal"
-                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
-                <div class="bg-bgPanel p-8 rounded-xl max-w-sm w-full shadow-2xl relative border border-borderStd">
-                    <button @click="showTgAuthModal = false"
-                        class="absolute top-4 right-4 text-textMuted hover:text-red-500">&times;</button>
-                    <h2 class="text-xl font-bold mb-4" x-text="'Login - Conta ' + tgAuth.account"></h2>
-
-                    <!-- Passo 1: Telefone -->
-                    <form @submit.prevent="tgSendCode" x-show="tgAuth.step === 'phone'" class="space-y-4">
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <p class="text-sm text-textMuted dark:text-textMuted mb-2">API ID</p>
-                                <input type="number" x-model="tgAuth.apiId" placeholder="123456"
-                                    class="w-full px-4 py-2 rounded bg-bgSurface text-textMain border border-borderStd focus:outline-none focus:ring-1 focus:ring-primary"
-                                    required>
-                            </div>
-                            <div>
-                                <p class="text-sm text-textMuted dark:text-textMuted mb-2">API Hash</p>
-                                <input type="text" x-model="tgAuth.apiHash" placeholder="abc…"
-                                    class="w-full px-4 py-2 rounded bg-bgSurface text-textMain border border-borderStd focus:outline-none focus:ring-1 focus:ring-primary"
-                                    required>
-                            </div>
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 premium-transition" x-cloak>
+                
+                <div class="absolute inset-0 bg-black/80 backdrop-blur-xl" @click="showTgAuthModal = false"></div>
+                
+                <div class="ethereal-shell w-full max-w-md relative z-10 scale-100 transform transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                    <div class="ethereal-core p-8">
+                        <button @click="showTgAuthModal = false"
+                            class="absolute top-6 right-6 text-textMuted hover:text-white transition-colors w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10" aria-label="Fechar modal">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>    
+                        </button>
+                        
+                        <div class="mb-8">
+                            <span class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium bg-white/10 text-white border border-white/10 mb-4 inline-block">Autenticação</span>
+                            <h2 class="text-2xl font-medium tracking-tight text-white" x-text="'Sessão da Conta ' + tgAuth.account"></h2>
                         </div>
-                        <p class="text-sm text-textMuted dark:text-textMuted mb-2">Insira o telefone com código do país
-                            (ex:
-                            +5511999999999)</p>
-                        <input type="text" x-model="tgAuth.phone" placeholder="+55…"
-                            class="w-full px-4 py-2 rounded bg-bgSurface text-textMain border border-borderStd focus:outline-none focus:ring-1 focus:ring-primary"
-                            required>
-                        <button type="submit" class="w-full py-2 bg-primary text-textMain transition-colors hover:bg-primaryHover rounded font-bold"
-                            :disabled="tgAuth.loading">
-                            <span x-show="!tgAuth.loading">Enviar Código</span>
-                            <span x-show="tgAuth.loading">Enviando…</span>
-                        </button>
-                    </form>
 
-                    <!-- Passo 2: Código SMS -->
-                    <form @submit.prevent="tgSubmitCode" x-show="tgAuth.step === 'code'" class="space-y-4">
-                        <p class="text-sm text-textMuted dark:text-textMuted mb-2">Código enviado para o Telegram.</p>
-                        <input type="text" x-model="tgAuth.code" placeholder="Código (ex: 12345)"
-                            class="w-full px-4 py-2 rounded bg-bgSurface text-textMain border border-borderStd focus:outline-none focus:ring-1 focus:ring-primary"
-                            required>
-                        <button type="submit" class="w-full py-2 bg-primary text-textMain transition-colors hover:bg-primaryHover rounded font-bold"
-                            :disabled="tgAuth.loading">
-                            <span x-show="!tgAuth.loading">Entrar</span>
-                            <span x-show="tgAuth.loading">Verificando…</span>
-                        </button>
-                    </form>
+                        <!-- Passo 1: Telefone -->
+                        <form @submit.prevent="tgSendCode" x-show="tgAuth.step === 'phone'" class="space-y-5">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">API ID</label>
+                                    <input type="number" x-model="tgAuth.apiId" placeholder="123456"
+                                        class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors"
+                                        required>
+                                </div>
+                                <div>
+                                    <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">API Hash</label>
+                                    <input type="text" x-model="tgAuth.apiHash" placeholder="abc…"
+                                        class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors"
+                                        required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Telefone Internacional</label>
+                                <input type="text" x-model="tgAuth.phone" placeholder="+55…"
+                                    class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors"
+                                    required>
+                            </div>
+                            <button type="submit" class="group btn-island w-full bg-primary text-white font-medium flex items-center justify-between mt-6"
+                                :disabled="tgAuth.loading">
+                                <span x-show="!tgAuth.loading">Enviar Código</span>
+                                <span x-show="tgAuth.loading">Conectando…</span>
+                                <div class="icon-circle">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </div>
+                            </button>
+                        </form>
 
-                    <!-- Passo 3: Senha 2FA (se necessário) -->
-                    <form @submit.prevent="tgSubmitPassword" x-show="tgAuth.step === 'password'" class="space-y-4">
-                        <p class="text-sm text-textMuted dark:text-textMuted mb-2">Conta protegida por verificação em duas
-                            etapas
-                            (2FA).</p>
-                        <input type="password" autocomplete="current-password" x-model="tgAuth.password" placeholder="Sua senha…"
-                            class="w-full px-4 py-2 rounded bg-bgSurface border border-borderStd text-textMain focus:outline-none focus:ring-1 focus:ring-primary"
-                            required>
-                        <button type="submit" class="w-full py-2 bg-primary text-textMain transition-colors hover:bg-primaryHover rounded font-bold"
-                            :disabled="tgAuth.loading">
-                            <span x-show="!tgAuth.loading">Entrar</span>
-                            <span x-show="tgAuth.loading">Verificando…</span>
-                        </button>
-                    </form>
+                        <!-- Passo 2: Código SMS -->
+                        <form @submit.prevent="tgSubmitCode" x-show="tgAuth.step === 'code'" class="space-y-5">
+                            <div>
+                                <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Código de Verificação</label>
+                                <p class="text-sm text-textMuted mb-4">Um código foi enviado para o seu aplicativo Telegram.</p>
+                                <input type="text" x-model="tgAuth.code" placeholder="Ex: 12345"
+                                    class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors text-center tracking-[0.3em] font-mono text-lg"
+                                    required>
+                            </div>
+                            <button type="submit" class="group btn-island w-full bg-primary text-white font-medium flex items-center justify-between"
+                                :disabled="tgAuth.loading">
+                                <span x-show="!tgAuth.loading">Confirmar Código</span>
+                                <span x-show="tgAuth.loading">Verificando…</span>
+                                <div class="icon-circle">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </button>
+                        </form>
 
-                    <div x-show="tgAuth.error"
-                        class="mt-4 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded border border-red-300 dark:border-red-800"
-                        x-text="tgAuth.error"></div>
+                        <!-- Passo 3: Senha 2FA -->
+                        <form @submit.prevent="tgSubmitPassword" x-show="tgAuth.step === 'password'" class="space-y-5">
+                            <div>
+                                <label class="text-[11px] text-textMuted uppercase tracking-widest block mb-2 font-medium">Autenticação de Dois Fatores</label>
+                                <p class="text-sm text-textMuted mb-4">Esta conta é protegida por uma senha 2FA.</p>
+                                <input type="password" autocomplete="current-password" x-model="tgAuth.password" placeholder="Sua senha…"
+                                    class="w-full px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 focus:outline-none focus:border-primary focus:bg-white/10 transition-colors"
+                                    required>
+                            </div>
+                            <button type="submit" class="group btn-island w-full bg-primary text-white font-medium flex items-center justify-between"
+                                :disabled="tgAuth.loading">
+                                <span x-show="!tgAuth.loading">Desbloquear Sessão</span>
+                                <span x-show="tgAuth.loading">Autenticando…</span>
+                                <div class="icon-circle">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                                </div>
+                            </button>
+                        </form>
+
+                        <div x-show="tgAuth.error"
+                            class="mt-6 p-4 bg-red-500/10 text-red-400 text-sm rounded-xl border border-red-500/20 backdrop-blur-md"
+                            x-text="tgAuth.error"></div>
+                    </div>
                 </div>
             </div>
 
