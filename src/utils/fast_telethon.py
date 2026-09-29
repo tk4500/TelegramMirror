@@ -122,11 +122,12 @@ class ParallelTransferrer:
         self.senders = None
 
     @staticmethod
-    def _get_connection_count(file_size: int, max_count: int = 20,
-                              full_size: int = 100 * 1024 * 1024) -> int:
+    def _get_connection_count(file_size: int, max_count: int = 30,
+                              full_size: int = 50 * 1024 * 1024) -> int:
         if file_size > full_size:
             return max_count
-        return math.ceil((file_size / full_size) * max_count)
+        # Always use at least 2 connections, scale linearly up to max_count
+        return max(2, math.ceil((file_size / full_size) * max_count))
 
     async def _init_download(self, connections: int, file: TypeLocation, part_count: int,
                              part_size: int) -> None:

@@ -417,6 +417,16 @@
                                             Feed de Origem
                                             <span x-show="feedLoading" class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
                                         </h2>
+                                    <button x-show="isGlobalDebugMode && config.source_chat_id"
+                                        @click="downloadAllMessages()"
+                                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded text-[10px] transition shadow">
+                                        Baixar Todas as Mensagens (Dev)
+                                    </button>
+                                    <button x-show="isGlobalDebugMode && config.source_chat_id"
+                                        @click="downloadAllMessages()"
+                                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded text-[10px] transition shadow">
+                                        Baixar Todas as Mensagens (Dev)
+                                    </button>
                                     </div>
                                 </div>
 
@@ -1205,6 +1215,35 @@
                                 const matchType = filterType === 'all' ? true : (filterType === 'channel' ? c.chat_type === 'channel' : c.chat_type === 'group');
                                 return matchText && matchType;
                             });
+                        },
+
+                        async downloadAllMessages() {
+                            if (!this.config.source_chat_id) {
+                                this.log("Selecione um chat de origem primeiro.", "ERROR");
+                                return;
+                            }
+                            if (confirm("Isso iniciará o download de TODAS as mensagens deste chat na máquina local sem enviar para nenhum destino. Confirma?")) {
+                                let payload = {
+                                    source_chat_id: this.config.source_chat_id,
+                                    dest_chat_id: this.config.source_chat_id, // Dummy
+                                    mode: 'replicate',
+                                    scope: 'history',
+                                    speed_profile: this.config.speed_profile,
+                                    selective_ids: [],
+                                    download_only: true
+                                };
+                                
+                                try {
+                                    const result = await this.api('/flow/start', { method: 'POST', body: JSON.stringify(payload) });
+                                    if (result.status === 'started') {
+                                        this.sysStatus = 'running';
+                                        this.log("> Iniciando rotina de Download Only...", "INFO");
+                                        this.checkStatus(); // Force status refresh
+                                    }
+                                } catch (err) {
+                                    this.log(`Falha ao iniciar rotina: ${err.message}`, "ERROR");
+                                }
+                            }
                         },
 
                         // === TG Auth Methods ===

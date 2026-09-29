@@ -16,7 +16,7 @@ from src.utils.disk_monitor import DiskMonitor
 from src.utils.fast_telethon import download_file, upload_file
 
 class MediaPreloader:
-    def __init__(self, client: TelegramClient, max_workers: int = 10):
+    def __init__(self, client: TelegramClient, max_workers: int = 100, **kwargs):
         self._client = client
         self._queue = asyncio.Queue()
         self._results = {}
@@ -26,6 +26,10 @@ class MediaPreloader:
         self._workers = []
         self._monitor_task = None
         self._disk_monitor = DiskMonitor()
+        self._download_only = kwargs.get('download_only', False)
+        if self._download_only:
+            self._download_dir = Path("data/downloads")
+            self._download_dir.mkdir(parents=True, exist_ok=True)
         
     async def start(self):
         """Inicia os workers e o monitoramento."""
@@ -73,12 +77,17 @@ class MediaPreloader:
                 ram = psutil.virtual_memory().percent
                 is_disk_critical = self._disk_monitor.is_space_critical()
                 
-                if cpu > 95 or ram > 90 or is_disk_critical:
-                    # Reduz workers se sobrecarregado
-                    self._active_workers = max(1, self._active_workers - 1)
-                elif cpu < 60 and ram < 80 and not is_disk_critical:
-                    # Aumenta workers se folgado
-                    self._active_workers = min(self._max_workers, self._active_workers + 1)
+                if is_disk_critical:
+                    # Sempre reduz se o disco lotar
+                    self._active_workers = max(1, self._active_workers - 2)
+                else:
+                    if cpu > 95 or ram > 90:
+                        # Reduz workers se sobrecarregado
+                        self._active_workers = max(1, self._active_workers - 1)
+                    elif cpu < 75 and ram < 85:
+                        # Aumenta workers se folgado (se download_only, sobe mais rapido)
+                        step = 5 if self._download_only else 1
+                        self._active_workers = min(self._max_workers, self._active_workers + step)
                 
                 await asyncio.sleep(2)
             except Exception as e:
@@ -139,7 +148,16 @@ class MediaPreloader:
             file_name = getattr(msg.file, "name", "")
             if not file_name:
                 file_name = f"media_{msg.id}{ext}"
-            media_path = f"data/temp/{msg.id}_{int(time.time())}{ext}"
+            
+            if self._download_only:
+                chat_dir = self._download_dir / str(msg.chat_id)
+                chat_dir.mkdir(exist_ok=True)
+                media_path = str(chat_dir / file_name)
+                # Ensure filename uniqueness if it already exists
+                if os.path.exists(media_path):
+                    media_path = str(chat_dir / f"{msg.id}_{file_name}")
+            else:
+                media_path = f"data/temp/{msg.id}_{int(time.time())}{ext}"
             
             with open(media_path, "wb") as f:
                 file_size = getattr(msg.file, "size", 0)
@@ -151,6 +169,13 @@ class MediaPreloader:
                     self._events[msg.id].set()
                 return
                 
+            if self._download_only:
+                self._results[msg.id] = media_path
+                succ = f"Preloader: Download da msg {msg.id} concluído para {media_path}."
+                logger.info(succ)
+                await ws_log(succ, "OK")
+                return
+
             # Upload
             last_log = time.time()
             async def progress_ul(current, total):
@@ -181,10 +206,12 @@ class MediaPreloader:
             
         except FloodWaitError as e:
             logger.warning("Preloader FloodWait (%ds) na msg %d", e.seconds, msg.id)
+            self._active_workers = max(2, self._active_workers - 10) # Penaliza forte no floodwait
             await asyncio.sleep(e.seconds)
             await self._process_message(msg) # tenta de novo
         except Exception as e:
             logger.error("Preloader falhou na msg %d: %s", msg.id, e)
+            self._active_workers = max(2, self._active_workers - 5) # Penaliza em erro de conexão
             self._results[msg.id] = None
         finally:
             if msg.id in self._events:
