@@ -46,7 +46,6 @@ class HistoryBackfill:
         speed_profile: SpeedProfile = SpeedProfile.SAFE,
         replacement_rules: list[ReplacementRule] | None = None,
         debug_mode: bool = False,
-        **kwargs
     ):
         self._client = client
         self._source_chat_id = source_chat_id
@@ -55,12 +54,10 @@ class HistoryBackfill:
         self._speed = SPEED_DELAYS[speed_profile]
         self._debug_mode = debug_mode
 
-        self._download_only = kwargs.get('download_only', False)
-
         self._forward_copier = ForwardCopier(client)
         self._text_copier = TextCopier(client)
         self._album_copier = AlbumCopier(client)
-        self._preloader = MediaPreloader(client, download_only=self._download_only)
+        self._preloader = MediaPreloader(client)
         self._entity_parser = EntityParser()
         self._regex_engine = RegexEngine(replacement_rules)
         self._text_preprocessor = TextPreprocessor(self._entity_parser, self._regex_engine)
@@ -297,11 +294,10 @@ class HistoryBackfill:
         self._last_message_id = message.id
 
         # Delay anti-flood
-        if not self._download_only:
-            await asyncio.sleep(self._speed["message"])
+        await asyncio.sleep(self._speed["message"])
 
         # Pausa entre lotes
-        if not self._download_only and batch_count > 0 and batch_count % self._speed["batch_size"] == 0:
+        if batch_count > 0 and batch_count % self._speed["batch_size"] == 0:
             logger.debug("Pausa de lote: %.1fs", self._speed["batch_pause"])
             await asyncio.sleep(self._speed["batch_pause"])
 
@@ -363,15 +359,10 @@ class HistoryBackfill:
                     logger.warning(f"Mensagem {message.id} falhou no preprocessor, tentando ignorar.")
                     return False
 
-                if self._download_only:
-                    # Skip transformation/upload
-                    sent = True
-                    pass
-                else:
-                    if self._debug_mode and transformations:
-                        await ws_log(f"Debug [Transformação] Mensagem {message.id}", "INFO", transformations)
+                if self._debug_mode and transformations:
+                    await ws_log(f"Debug [Transformação] Mensagem {message.id}", "INFO", transformations)
 
-                if parsed.has_media and not self._download_only:
+                if parsed.has_media:
                     if self._mode == CopyMode.REPLICATE:
                         sent = await self._text_copier.replicate_message(
                             self._dest_chat_id, message, parsed_override=parsed, preloader=self._preloader
@@ -380,7 +371,7 @@ class HistoryBackfill:
                         sent = await self._text_copier.replicate_message(
                             self._dest_chat_id, message, parsed_override=parsed
                         )
-                elif parsed.text and not self._download_only:
+                elif parsed.text:
                     sent = await self._client.send_message(
                         entity=self._dest_chat_id,
                         message=parsed.text,
@@ -388,31 +379,6 @@ class HistoryBackfill:
                         link_preview=False,
                     )
 
-            if self._download_only:
-                # Se for download_only, ja esperamos o preloader no text_copier? Nao chamamos text_copier!
-                # Entao precisamos esperar aqui.
-                # Escreve a mensagem no JSON.
-                if getattr(message, 'media', None):
-                    dl_path = await self._preloader.get_preloaded(message.id)
-                else:
-                    dl_path = None
-                    
-                msg_dict = message.to_dict()
-                if dl_path:
-                    msg_dict['_downloaded_path'] = str(dl_path)
-                
-                from pathlib import Path
-                import json
-                from src.utils.logger import TelethonEncoder
-                
-                dl_dir = Path("data/downloads") / str(self._source_chat_id)
-                dl_dir.mkdir(parents=True, exist_ok=True)
-                json_path = dl_dir / "messages.jsonl"
-                with open(json_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(msg_dict, cls=TelethonEncoder) + "\n")
-                
-                sent = message # Mock
-                
             # Sincroniza pin
             if sent and self._pin_service.is_pinned(message):
                 await self._pin_service.pin_message(self._dest_chat_id, sent.id)
@@ -463,33 +429,6 @@ class HistoryBackfill:
             messages.sort(key=lambda m: m.id)
 
             try:
-                if self._download_only:
-                    # Apenas aguarda os arquivos baixarem
-                    dl_paths = []
-                    for m in messages:
-                        p = await self._preloader.get_preloaded(m.id)
-                        dl_paths.append(p)
-                        
-                    # Grava metadata no jsonl
-                    from pathlib import Path
-                    import json
-                    from src.utils.logger import TelethonEncoder
-                    
-                    dl_dir = Path("data/downloads") / str(self._source_chat_id)
-                    dl_dir.mkdir(parents=True, exist_ok=True)
-                    json_path = dl_dir / "messages.jsonl"
-                    
-                    with open(json_path, "a", encoding="utf-8") as f:
-                        for idx, m in enumerate(messages):
-                            msg_dict = m.to_dict()
-                            if dl_paths[idx]:
-                                msg_dict['_downloaded_path'] = str(dl_paths[idx])
-                            f.write(json.dumps(msg_dict, cls=TelethonEncoder) + "\n")
-                    
-                    self._processed_count += len(messages)
-                    self._last_message_id = messages[-1].id
-                    continue
-
                 if self._mode == CopyMode.FORWARD:
                     await self._album_copier.forward_album(
                         self._source_chat_id, self._dest_chat_id, messages

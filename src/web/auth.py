@@ -28,8 +28,8 @@ async def login(credentials: LoginRequest, request: Request):
     valid_user = user_row["value"] if user_row else "admin"
     valid_pass = pass_row["value"] if pass_row else "admin"
 
-    #if credentials.username != valid_user or credentials.password != valid_pass:
-    #    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais incorretas")
+    if credentials.username != valid_user or credentials.password != valid_pass:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais incorretas")
 
     payload = {
         "sub": credentials.username,
