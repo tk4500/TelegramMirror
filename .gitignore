@@ -45,7 +45,6 @@ downloads/
 *.swp
 *.swo
 temp_mhtml/*
-docs/*
 dist/
 TelegramMirror.spec
 .env.embedded
