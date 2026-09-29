@@ -27,7 +27,7 @@ flowchart TD
     Orchestrator --> Copier[Message Copier]
     Orchestrator --> History[History Extractor]
     
-    SessionManager <--> Telegram{{Telegram API (MTProto)}}
+    SessionManager <--> Telegram{{Telegram API / MTProto}}
     Copier --> Telegram
     History --> Telegram
     
